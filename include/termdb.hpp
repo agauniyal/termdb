@@ -577,7 +577,7 @@ public:
 
 	std::string getCapStr(cap::str _s) const
 	{
-		const auto s = static_cast<int>(_s);
+		const size_t s = static_cast<int>(_s);
 		std::string result;
 		if (s <= stringOffset.size()) {
 			const auto offset = stringOffset[s];
@@ -641,7 +641,7 @@ bool TermDb::loadDB(const std::string _name, std::string _path)
 
 
 	// check for malformed databases
-	const auto minBytes
+	const size_t minBytes
 	  = 12 + sList[0] + sList[1] + ((sList[2] + sList[3]) * 2) + sList[4];
 	if (buffer.size() <= minBytes) {
 		status = -4;
