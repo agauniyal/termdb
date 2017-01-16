@@ -1,4 +1,4 @@
-project('isaac-core', 'cpp', version : '0.1.0',
+project('termdb', 'cpp', version : '0.1.0',
 		default_options : ['cpp_std=c++11'])
 
 inc = include_directories('include')
@@ -16,7 +16,7 @@ if not gtest.found()
                                 include_directories : gtest_inc)
 
     gtest = declare_dependency(include_directories : gtest_inc,
-                               link_with : gtest_lib)
+                               link_with : gtest_lib, dependencies: thread_dep)
 endif
 
 subdir('test')

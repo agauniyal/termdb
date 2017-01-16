@@ -1,0 +1,108 @@
+language: cpp
+
+matrix:
+  include:
+    - os: linux
+      dist: trusty
+      compiler: gcc
+      addons:
+        apt:
+          sources: ['ubuntu-toolchain-r-test']
+          packages: ['g++-4.8']
+      env:
+        - COMPILER=g++-4.8
+
+    - os: linux
+      dist: trusty
+      compiler: gcc
+      addons:
+        apt:
+          sources: ['ubuntu-toolchain-r-test']
+          packages: ['g++-4.9']
+      env:
+        - COMPILER=g++-4.9
+
+    - os: linux
+      dist: trusty
+      compiler: gcc
+      addons:
+        apt:
+          sources: ['ubuntu-toolchain-r-test']
+          packages: ['g++-5']
+
+      env:
+        - COMPILER=g++-5
+
+    - os: linux
+      dist: trusty
+      compiler: gcc
+      addons:
+        apt:
+          sources: ['ubuntu-toolchain-r-test']
+          packages: ['g++-6']
+
+      env:
+        - COMPILER=g++-6
+
+    - os: linux
+      dist: trusty
+      compiler: clang
+      addons:
+        apt:
+          sources: ['ubuntu-toolchain-r-test', 'llvm-toolchain-precise-3.5']
+          packages: ['clang-3.5']
+      env:
+        - COMPILER=clang++-3.5
+
+    - os: linux
+      dist: trusty
+      compiler: clang
+      addons:
+        apt:
+          sources: ['ubuntu-toolchain-r-test', 'llvm-toolchain-precise-3.6']
+          packages: ['clang-3.6']
+      env:
+        - COMPILER=clang++-3.6
+
+    - os: linux
+      dist: trusty
+      compiler: clang
+      addons:
+        apt:
+          sources: ['ubuntu-toolchain-r-test', 'llvm-toolchain-precise-3.7']
+          packages: ['clang-3.7']
+      env:
+        - COMPILER=clang++-3.7
+
+    - os: linux
+      dist: trusty
+      compiler: clang
+      addons:
+        apt:
+          sources: ['ubuntu-toolchain-r-test', 'llvm-toolchain-precise-3.8']
+          packages: ['clang-3.8']
+      env:
+        - COMPILER=clang++-3.8
+
+
+install:
+  - wget https://github.com/ninja-build/ninja/releases/download/v1.7.2/ninja-linux.zip && unzip -q ninja-linux.zip -d build
+  - pip3 install meson
+  - export PATH="`pwd`/build:${PATH}"
+
+before_script:
+  - export CXX=$COMPILER
+  - mkdir build2
+  - cd build2
+  - meson -Db_coverage=true ..
+
+script:
+  - ninja
+  - cd ../test
+  - ./../build2/test/testexe
+
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
+
+notifications:
+  email: false
