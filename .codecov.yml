@@ -22,3 +22,6 @@ parsers:
       loop: true
       macro: false
       method: true
+
+ignore:
+- test/
