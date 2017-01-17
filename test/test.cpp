@@ -5,7 +5,7 @@
 
 TEST(Constructor, Success)
 {
-	TermDb parser("xterm");
+	TermDb parser("xterm", "terminfo/");
 
 	ASSERT_TRUE(parser);
 	ASSERT_EQ(0, parser.getStatus());
@@ -27,7 +27,7 @@ TEST(Constructor, NON_EXISTENT_TERM)
 TEST(Parse, Success)
 {
 	TermDb parser;
-	auto result = parser.parse("xterm");
+	auto result = parser.parse("xterm", "terminfo/");
 
 	ASSERT_TRUE(result);
 	ASSERT_TRUE(parser);
@@ -52,7 +52,7 @@ TEST(Parse, NON_EXISTENT_TERM)
 TEST(Parse, DataResets)
 {
 	TermDb parser;
-	auto result = parser.parse("xterm");
+	auto result = parser.parse("xterm", "terminfo/");
 	EXPECT_TRUE(result);
 
 	auto name = parser.getTermName();
