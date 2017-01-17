@@ -20,7 +20,6 @@ TEST(Constructor, NON_EXISTENT_TERM)
 	ASSERT_FALSE(parser);
 	ASSERT_NE(0, parser.getStatus());
 	ASSERT_EQ(-2, parser.getStatus());
-	ASSERT_EQ(0, parser.getTermName().size());
 }
 
 
@@ -32,7 +31,6 @@ TEST(Parse, Success)
 	ASSERT_TRUE(result);
 	ASSERT_TRUE(parser);
 	ASSERT_EQ(0, parser.getStatus());
-	ASSERT_NE(0, parser.getTermName().size());
 }
 
 
@@ -49,6 +47,42 @@ TEST(Parse, NON_EXISTENT_TERM)
 }
 
 
+TEST(Parse, NoMagicBytes)
+{
+	TermDb parser;
+	auto result = parser.parse("corrupt-magic", "terminfo/");
+
+	ASSERT_FALSE(result);
+	ASSERT_FALSE(parser);
+	ASSERT_NE(0, parser.getStatus());
+	ASSERT_EQ(-3, parser.getStatus());
+}
+
+
+TEST(Parse, Size0)
+{
+	TermDb parser;
+	auto result = parser.parse("corrupt-size", "terminfo/");
+
+	ASSERT_FALSE(result);
+	ASSERT_FALSE(parser);
+	ASSERT_NE(0, parser.getStatus());
+	ASSERT_EQ(-2, parser.getStatus());
+}
+
+
+TEST(Parse, Corrupted)
+{
+	TermDb parser;
+	auto result = parser.parse("corrupted", "terminfo/");
+
+	ASSERT_FALSE(result);
+	ASSERT_FALSE(parser);
+	ASSERT_NE(0, parser.getStatus());
+	ASSERT_EQ(-4, parser.getStatus());
+}
+
+
 TEST(Parse, DataResets)
 {
 	TermDb parser;
@@ -56,14 +90,15 @@ TEST(Parse, DataResets)
 	EXPECT_TRUE(result);
 
 	auto name = parser.getTermName();
-	result    = parser.parse("gnome");
+	result    = parser.parse("adm3a", "terminfo/");
 	EXPECT_TRUE(result);
 
 	ASSERT_NE(name, parser.getTermName());
 }
 
 
-TEST(Parse, WrongArguments){
+TEST(Parse, WrongArguments)
+{
 	TermDb parser;
 	auto result = parser.parse("");
 	ASSERT_FALSE(result);
