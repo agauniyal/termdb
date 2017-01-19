@@ -105,3 +105,54 @@ TEST(Parse, WrongArguments)
 	result = parser.parse("xterm", "");
 	ASSERT_FALSE(result);
 }
+
+
+TEST(Capablities, Name)
+{
+	TermDb parser("adm3a", "terminfo/");
+	auto name = parser.getTermName();
+
+	ASSERT_EQ("adm3a|lsi adm3a", name);
+}
+
+
+TEST(Capablities, Booleans)
+{
+	TermDb parser("adm3a", "terminfo/");
+
+	std::bitset<44> arr;
+
+	for (auto i = 0; i < 44; ++i) {
+		auto currCap = static_cast<cap::bin>(i);
+		arr[i]       = parser.getCapBin(currCap);
+	}
+
+	auto revString = "00000010000000000000000000000000000000000010";
+	ASSERT_EQ(revString, arr.to_string());
+}
+
+
+TEST(Capablities, Numbers)
+{
+	TermDb parser("adm3a", "terminfo/");
+
+	std::vector<uint16_t> hardNums(39, 65535);
+	// hardocoded for adm3a
+	hardNums[0] = 80;
+	hardNums[2] = 24;
+
+	std::vector<uint16_t> parsedNums(39, 65535);
+
+	for (auto i = 0; i < 39; ++i) {
+		auto currCap  = static_cast<cap::num>(i);
+		parsedNums[i] = parser.getCapNum(currCap);
+	}
+
+	ASSERT_EQ(hardNums.size(), parsedNums.size())
+	  << "Vectors hardNums and parsedNums are of unequal length";
+
+	for (size_t i = 0; i < hardNums.size(); ++i) {
+		EXPECT_EQ(hardNums[i], parsedNums[i])
+		  << "Vectors hardNums and parsedNums differ at index " << i;
+	}
+}
