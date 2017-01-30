@@ -46,7 +46,7 @@ int main()
 
 	/* The difference b/w constructor and parse() method
 	   is that parse() method returns a boolean result
-	   indicating success of operation while constructr cannot
+	   indicating success of operation while constructor cannot
 	*/
 
 	// so how to check for errors?
@@ -58,5 +58,43 @@ int main()
 	} else {
 		// do your magic ;)
 	}
+}
+```
+
+#### 3.
+```cpp
+{
+	// What about capablities are not present?
+
+	TermDb parser;
+	bool result = parser.parse("adm3a");
+
+	// Well boolean capablities can return false so
+	// capB will be false if asked capablity isn't there
+	auto b = parser.getCapBin(cap::bin::has_meta_key);
+
+	// Similarly string capablities can return empty strings
+	// in case no said capablity is found for given terminal
+	auto s = parser.getCapStr(cap::str::enter_bold_mode);
+
+	// The case becomes tricky when dealing with numerical
+	// capablities. To ease out development, a special var
+	// cap::NP is provided which denotes NOT PRESENT
+	auto n = parser.getCapNum(cap::num::columns);
+	if( n == cap::NP){
+		// it ain't there
+	}
+}
+```
+
+
+#### 4.
+```cpp
+{
+	// What about thread safety?
+
+	// Well either you can create new parser objects in each thread
+	// or in case you want to use same parser object, guard the
+	// constructor and/or parse() method with a lock_guard() or mutex.
 }
 ```
