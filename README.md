@@ -3,7 +3,7 @@
 Terminfo parser for modern c++
 
 ```cpp
-#include "include/termdb.hpp"
+#include "termdb.hpp"
 #include <iostream>
 
 int main()
