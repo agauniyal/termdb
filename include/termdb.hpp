@@ -10,7 +10,7 @@ namespace cap {
 // NP represents 'Not Present' properties, represented by
 // -1 value in terminfo databases. Since uint16_t is unsigned
 // we need to represent it by special NP variable
-uint16_t NP = std::numeric_limits<uint16_t>::max();
+static constexpr auto NP = std::numeric_limits<uint16_t>::max();
 
 enum class bin {
 	auto_left_margin,
@@ -522,7 +522,7 @@ enum class str {
 
 class TermDb {
 private:
-	int status;
+	int status{0};
 	std::string name;
 	std::bitset<44> booleans;
 	uint16_t numbers[39];
@@ -539,37 +539,37 @@ private:
 		stringTable.clear();
 	}
 
-	bool loadDB(const std::string, std::string);
+	bool loadDB(const std::string&, std::string);
 
 public:
-	TermDb() : status(0)
+	TermDb()
 	{
 		std::fill(std::begin(numbers), std::end(numbers), cap::NP);
 	}
 
-	TermDb(const std::string _n, std::string _p = "/usr/share/terminfo/")
+	TermDb(const std::string& _n, std::string _p = "/usr/share/terminfo/")
 	    : TermDb()
 	{
 		loadDB(_n, _p);
 	}
 
-	int getStatus() const { return status; }
-	explicit operator bool() const { return status == 0; }
-	std::string getTermName() const { return name; }
+	int getStatus() const noexcept { return status; }
+	explicit operator bool() const noexcept { return status == 0; }
+	const std::string& getTermName() const noexcept { return name; }
 
-	bool parse(const std::string _n, std::string _p = "/usr/share/terminfo/")
+	bool parse(const std::string& _n, std::string _p = "/usr/share/terminfo/")
 	{
 		resetData();
 		return loadDB(_n, _p);
 	}
 
-	bool getCapBin(cap::bin _b) const
+	bool getCapBin(cap::bin _b) const noexcept
 	{
 		const auto b = static_cast<int>(_b);
 		return booleans[b];
 	}
 
-	uint16_t getCapNum(cap::num _n) const
+	uint16_t getCapNum(cap::num _n) const noexcept
 	{
 		const auto n = static_cast<int>(_n);
 		return numbers[n];
@@ -590,9 +590,9 @@ public:
 };
 
 
-bool TermDb::loadDB(const std::string _name, std::string _path)
+bool TermDb::loadDB(const std::string& _name, std::string _path)
 {
-	if (_name.length() == 0 || _path.length() == 0) {
+	if (_name.empty() || _path.empty()) {
 		status = -1;
 		return false;
 	}
@@ -620,7 +620,7 @@ bool TermDb::loadDB(const std::string _name, std::string _path)
 	buffer.push_back('\0');
 
 	// header contains a constant magic number
-	auto magic_byte = buffer[0] | (buffer[1] << 8);
+	const auto magic_byte = buffer[0] | (buffer[1] << 8);
 	if (magic_byte != 0432) {
 		status = -3;
 		return false;
@@ -641,7 +641,7 @@ bool TermDb::loadDB(const std::string _name, std::string _path)
 
 
 	// check for malformed databases
-	const size_t minBytes
+	const std::size_t minBytes
 	  = 12 + sList[0] + sList[1] + ((sList[2] + sList[3]) * 2) + sList[4];
 	if (buffer.size() <= minBytes) {
 		status = -4;
