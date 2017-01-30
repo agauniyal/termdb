@@ -1,6 +1,6 @@
 # TermDb [![Build Status](https://travis-ci.org/agauniyal/termdb.svg?branch=master)](https://travis-ci.org/agauniyal/termdb) [![codecov](https://codecov.io/gh/agauniyal/termdb/branch/master/graph/badge.svg)](https://codecov.io/gh/agauniyal/termdb)
 
-Terminfo parser for modern c++
+Terminfo parser for modern c++. **[Docs](https://github.com/agauniyal/termdb/blob/master/docs/info.md)**.
 
 ```cpp
 #include "termdb.hpp"
