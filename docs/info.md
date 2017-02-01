@@ -73,18 +73,18 @@ int main()
 	bool result = parser.parse("adm3a");
 
 	// Well boolean capablities can return false so
-	// capB will be false if asked capablity isn't there
-	auto b = parser.getCapBin(cap::bin::has_meta_key);
+	// b will be false if capablity is missing
+	auto b = parser.getCapablity(bin::has_meta_key);
 
 	// Similarly string capablities can return empty strings
-	// in case no said capablity is found for given terminal
-	auto s = parser.getCapStr(cap::str::enter_bold_mode);
+	// in case said capablity is not found for given terminal
+	auto s = parser.getCapablity(str::enter_bold_mode);
 
 	// The case becomes tricky when dealing with numerical
 	// capablities. To ease out development, a special var
-	// cap::NP is provided which denotes NOT PRESENT
-	auto n = parser.getCapNum(cap::num::columns);
-	if( n == cap::NP){
+	// tdb::NP is provided which denotes NOT PRESENT
+	auto n = parser.getCapablity(num::columns);
+	if( n == tdb::NP){
 		// it ain't there
 	}
 }
