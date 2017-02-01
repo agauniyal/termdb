@@ -5,7 +5,9 @@
 #include <string>
 #include <vector>
 
-namespace cap {
+namespace tdb {
+
+constexpr const auto DPATH = "/usr/share/terminfo/";
 
 // NP represents 'Not Present' properties, represented by
 // -1 value in terminfo databases. Since uint16_t is unsigned
@@ -517,71 +519,61 @@ enum class str {
 	memory_unlock,
 	box_chars_1
 };
-}
 
 
 class TermDb {
 private:
-	int status{0};
-	std::string name;
+	int status{ 0 };
 	std::bitset<44> booleans;
 	uint16_t numbers[39];
+	std::string name;
 	std::vector<uint16_t> stringOffset;
 	std::vector<char> stringTable;
 
-	void resetData()
-	{
-		status = 0;
-		name.clear();
-		booleans.reset();
-		std::fill(std::begin(numbers), std::end(numbers), cap::NP);
-		stringOffset.clear();
-		stringTable.clear();
-	}
-
-	bool loadDB(const std::string&, std::string);
+	bool loadDB(const std::string &, std::string);
 
 public:
-	TermDb()
-	{
-		std::fill(std::begin(numbers), std::end(numbers), cap::NP);
-	}
+	TermDb() { std::fill(std::begin(numbers), std::end(numbers), tdb::NP); }
 
-	TermDb(const std::string& _n, std::string _p = "/usr/share/terminfo/")
-	    : TermDb()
+	TermDb(const std::string &_name, std::string _path = DPATH) : TermDb()
 	{
-		loadDB(_n, _p);
+		loadDB(_name, _path);
 	}
 
 	int getStatus() const noexcept { return status; }
 	explicit operator bool() const noexcept { return status == 0; }
-	const std::string& getTermName() const noexcept { return name; }
+	std::string getTermName() const noexcept { return name; }
 
-	bool parse(const std::string& _n, std::string _p = "/usr/share/terminfo/")
+	bool parse(const std::string &_name, std::string _path = DPATH)
 	{
-		resetData();
-		return loadDB(_n, _p);
+		status = 0;
+		name.clear();
+		booleans.reset();
+		std::fill(std::begin(numbers), std::end(numbers), tdb::NP);
+		stringOffset.clear();
+		stringTable.clear();
+		return loadDB(_name, _path);
 	}
 
-	bool getCapBin(cap::bin _b) const noexcept
+	bool getCapablity(tdb::bin _b) const noexcept
 	{
 		const auto b = static_cast<int>(_b);
 		return booleans[b];
 	}
 
-	uint16_t getCapNum(cap::num _n) const noexcept
+	uint16_t getCapablity(tdb::num _n) const noexcept
 	{
 		const auto n = static_cast<int>(_n);
 		return numbers[n];
 	}
 
-	std::string getCapStr(cap::str _s) const
+	std::string getCapablity(tdb::str _s) const
 	{
 		const size_t s = static_cast<int>(_s);
 		std::string result;
 		if (s <= stringOffset.size()) {
 			const auto offset = stringOffset[s];
-			if (offset != cap::NP && offset < stringTable.size()) {
+			if (offset != tdb::NP && offset < stringTable.size()) {
 				result.append(&stringTable[offset]);
 			}
 		}
@@ -590,7 +582,7 @@ public:
 };
 
 
-bool TermDb::loadDB(const std::string& _name, std::string _path)
+bool TermDb::loadDB(const std::string &_name, std::string _path)
 {
 	if (_name.empty() || _path.empty()) {
 		status = -1;
@@ -615,6 +607,12 @@ bool TermDb::loadDB(const std::string& _name, std::string _path)
 	std::vector<uint8_t> buffer(size);
 	db.read(reinterpret_cast<char *>(buffer.data()), size);
 	db.close();
+
+	if (db.fail()) {
+		status = -2;
+		return false;
+	}
+
 
 	// sanitize if no at-the-end null byte present
 	buffer.push_back('\0');
@@ -693,6 +691,7 @@ bool TermDb::loadDB(const std::string& _name, std::string _path)
 	  std::inserter(stringTable, stringTable.begin()));
 
 	return true;
+}
 }
 
 /*

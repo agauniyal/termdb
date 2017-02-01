@@ -6,6 +6,8 @@ Terminfo parser for modern c++. **[Docs](https://github.com/agauniyal/termdb/blo
 #include "termdb.hpp"
 #include <iostream>
 
+using namespace tdb;
+
 int main()
 {
 	TermDb parser;
@@ -13,9 +15,9 @@ int main()
 
 	if (result) {
 		auto name = parser.getTermName();
-		auto b    = parser.getCapBin(cap::bin::has_meta_key);
-		auto n    = parser.getCapNum(cap::num::columns);
-		auto s    = parser.getCapStr(cap::str::enter_bold_mode);
+		auto b    = parser.getCapablity(bin::has_meta_key);
+		auto n    = parser.getCapablity(num::columns);
+		auto s    = parser.getCapablity(str::enter_bold_mode);
 
 		std::cout << "\n"
 		          << "Name: " << name << "\n"

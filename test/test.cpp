@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <termdb.hpp>
 
+using namespace tdb;
 
 TEST(Constructor, Success)
 {
@@ -123,8 +124,8 @@ TEST(Capablities, Booleans)
 	std::bitset<44> arr;
 
 	for (auto i = 0; i < 44; ++i) {
-		auto currCap = static_cast<cap::bin>(i);
-		arr[i]       = parser.getCapBin(currCap);
+		auto currCap = static_cast<bin>(i);
+		arr[i]       = parser.getCapablity(currCap);
 	}
 
 	auto revString = "00000010000000000000000000000000000000000010";
@@ -144,8 +145,8 @@ TEST(Capablities, Numbers)
 	std::vector<uint16_t> parsedNums(39, 65535);
 
 	for (auto i = 0; i < 39; ++i) {
-		auto currCap  = static_cast<cap::num>(i);
-		parsedNums[i] = parser.getCapNum(currCap);
+		auto currCap  = static_cast<num>(i);
+		parsedNums[i] = parser.getCapablity(currCap);
 	}
 
 	ASSERT_EQ(hardNums.size(), parsedNums.size())
