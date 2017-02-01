@@ -11,6 +11,9 @@ Examples below are self documenting -
 ```cpp
 #include "termdb.hpp"
 
+// Everything is provided under namespace tdb
+using namespace tdb;
+
 int main()
 {
 
