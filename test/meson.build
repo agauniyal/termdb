@@ -10,3 +10,9 @@ testexe = executable('testexe', test_sources, include_directories : inc,
         dependencies : [gtest], link_args : extra_args)
 
 test('app test', testexe, args: '--gtest_color=yes')
+
+
+stressTestexe = executable('stressTestexe', 'stressTest.cpp',
+			include_directories : inc, link_args : extra_args)
+
+test('stressTest', stressTestexe)

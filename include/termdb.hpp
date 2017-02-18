@@ -7,7 +7,12 @@
 
 namespace tdb {
 
-constexpr const auto DPATH = "/usr/share/terminfo/";
+constexpr const auto DPATH      = "/usr/share/terminfo/";
+
+// sizes from '/usr/include/term.h'
+constexpr const auto numCapBool = 44;
+constexpr const auto numCapNum  = 39;
+constexpr const auto numCapStr  = 414;
 
 // NP represents 'Not Present' properties, represented by
 // -1 value in terminfo databases. Since uint16_t is unsigned
@@ -524,8 +529,8 @@ enum class str {
 class TermDb {
 private:
 	int status{ 0 };
-	std::bitset<44> booleans;
-	uint16_t numbers[39];
+	std::bitset<numCapBool> booleans;
+	uint16_t numbers[numCapNum];
 	std::string name;
 	std::vector<uint16_t> stringOffset;
 	std::vector<char> stringTable;
@@ -582,7 +587,7 @@ public:
 };
 
 
-bool TermDb::loadDB(const std::string &_name, std::string _path)
+inline bool TermDb::loadDB(const std::string &_name, std::string _path)
 {
 	if (_name.empty() || _path.empty()) {
 		status = -1;

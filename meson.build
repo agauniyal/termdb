@@ -20,3 +20,6 @@ if not gtest.found()
 endif
 
 subdir('test')
+
+extract_data = find_program('scripts/extract_data.sh')
+run_target('extract_data', command : extract_data.path())

@@ -94,12 +94,13 @@ before_script:
   - export CXX=$COMPILER
   - mkdir build2
   - cd build2
-  - meson -Db_coverage=true ..
+  - meson --warnlevel=3 -Db_coverage=true ..
+  - ninja extract_data
 
 script:
   - ninja
-  - cd ../test
-  - ./../build2/test/testexe
+  - ./test/testexe
+  - ./test/stressTestexe
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
