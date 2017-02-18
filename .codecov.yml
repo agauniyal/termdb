@@ -8,7 +8,7 @@ comment:
 coverage:
   precision: 2
   range:
-  - 70.0
+  - 50.0
   - 100.0
   round: down
   status:
@@ -22,6 +22,3 @@ parsers:
       loop: true
       macro: false
       method: true
-
-ignore:
-- test/
