@@ -1,3 +1,7 @@
+/test/mirror
+/test/terminfo
+/test/stressTestTerms.txt
+
 # Compiled Object files
 *.slo
 *.lo
