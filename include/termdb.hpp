@@ -560,19 +560,19 @@ public:
 		return loadDB(_name, _path);
 	}
 
-	bool getCapablity(tdb::bin _b) const noexcept
+	bool getCapability(tdb::bin _b) const noexcept
 	{
 		const auto b = static_cast<int>(_b);
 		return booleans[b];
 	}
 
-	uint16_t getCapablity(tdb::num _n) const noexcept
+	uint16_t getCapability(tdb::num _n) const noexcept
 	{
 		const auto n = static_cast<int>(_n);
 		return numbers[n];
 	}
 
-	std::string getCapablity(tdb::str _s) const
+	std::string getCapability(tdb::str _s) const
 	{
 		const size_t s = static_cast<int>(_s);
 		std::string result;
