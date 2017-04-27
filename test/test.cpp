@@ -125,7 +125,7 @@ TEST(Capablities, Booleans)
 
 	for (auto i = 0; i < 44; ++i) {
 		auto currCap = static_cast<bin>(i);
-		arr[i]       = parser.getCapablity(currCap);
+		arr[i]       = parser.getCapability(currCap);
 	}
 
 	auto revString = "00000010000000000000000000000000000000000010";
@@ -146,7 +146,7 @@ TEST(Capablities, Numbers)
 
 	for (auto i = 0; i < 39; ++i) {
 		auto currCap  = static_cast<num>(i);
-		parsedNums[i] = parser.getCapablity(currCap);
+		parsedNums[i] = parser.getCapability(currCap);
 	}
 
 	ASSERT_EQ(hardNums.size(), parsedNums.size())

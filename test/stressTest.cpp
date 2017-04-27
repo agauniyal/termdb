@@ -25,19 +25,19 @@ int main()
 		std::string termName(parser.getTermName());
 
 		for (auto i = 0; i < tdb::numCapBool; ++i) {
-			const auto b = parser.getCapablity(static_cast<bin>(i));
+			const auto b = parser.getCapability(static_cast<bin>(i));
 			output << b << " ";
 		}
 		output << "\n";
 
 		for (auto i = 0; i < tdb::numCapNum; ++i) {
-			const auto n = parser.getCapablity(static_cast<num>(i));
+			const auto n = parser.getCapability(static_cast<num>(i));
 			output << n << " ";
 		}
 		output << "\n";
 
 		for (auto i = 0; i < tdb::numCapStr; ++i) {
-			const auto s = parser.getCapablity(static_cast<str>(i));
+			const auto s = parser.getCapability(static_cast<str>(i));
 			output << s << " ";
 		}
 		output << "\n\n";

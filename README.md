@@ -15,9 +15,9 @@ int main()
 
 	if (result) {
 		auto name = parser.getTermName();
-		auto b    = parser.getCapablity(bin::has_meta_key);
-		auto n    = parser.getCapablity(num::columns);
-		auto s    = parser.getCapablity(str::enter_bold_mode);
+		auto b    = parser.getCapability(bin::has_meta_key);
+		auto n    = parser.getCapability(num::columns);
+		auto s    = parser.getCapability(str::enter_bold_mode);
 
 		std::cout << "\n"
 		          << "Name: " << name << "\n"

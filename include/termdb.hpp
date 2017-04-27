@@ -560,19 +560,19 @@ public:
 		return loadDB(_name, _path);
 	}
 
-	bool getCapablity(tdb::bin _b) const noexcept
+	bool getCapability(tdb::bin _b) const noexcept
 	{
 		const auto b = static_cast<int>(_b);
 		return booleans[b];
 	}
 
-	uint16_t getCapablity(tdb::num _n) const noexcept
+	uint16_t getCapability(tdb::num _n) const noexcept
 	{
 		const auto n = static_cast<int>(_n);
 		return numbers[n];
 	}
 
-	std::string getCapablity(tdb::str _s) const
+	std::string getCapability(tdb::str _s) const
 	{
 		const size_t s = static_cast<int>(_s);
 		std::string result;
@@ -586,6 +586,13 @@ public:
 	}
 };
 
+inline char hashCharacter(unsigned char c) {
+	if (c < 10) {
+		return c + '0';
+	} else {
+		return (c - 10) + 'a';
+	}
+}
 
 inline bool TermDb::loadDB(const std::string &_name, std::string _path)
 {
@@ -594,11 +601,26 @@ inline bool TermDb::loadDB(const std::string &_name, std::string _path)
 		return false;
 	}
 
-	_path.append(_name, 0, 1).append(1, '/').append(_name);
-	std::ifstream db(_path.c_str(), std::ios::binary | std::ios::ate);
+	std::string letterPath = _path;
+	letterPath.append(_name, 0, 1).append(1, '/').append(_name);
+	std::ifstream db(letterPath.c_str(), std::ios::binary | std::ios::ate);
 	if (!db) {
-		status = -2;
-		return false;
+		// try using hash value
+		char hash[2];
+		unsigned char firstchar = _name[0];
+		hash[0] = hashCharacter((firstchar & 0xF0) >> 4);
+		hash[1] = hashCharacter(firstchar & 0x0F);
+
+		std::string hashPath = _path;
+		hashPath.append(std::string(&hash[0], 2)).append(1, '/').append(_name);
+
+		db.clear();
+		db.open(hashPath, std::ios::binary | std::ios::ate);
+
+		if (!db) {
+			status = -2;
+			return false;
+		}
 	}
 
 	const int size = db.tellg();
