@@ -95,6 +95,7 @@ before_script:
   - mkdir build2
   - cd build2
   - meson --warnlevel=3 -Db_coverage=true ..
+  - chmod +x ../scripts/extract_data.sh
   - ninja extract_data
 
 script:
