@@ -74,16 +74,16 @@ int main()
 
 	// Well boolean capablities can return false so
 	// b will be false if capablity is missing
-	auto b = parser.getCapablity(bin::has_meta_key);
+	auto b = parser.getCapability(bin::has_meta_key);
 
 	// Similarly string capablities can return empty strings
 	// in case said capablity is not found for given terminal
-	auto s = parser.getCapablity(str::enter_bold_mode);
+	auto s = parser.getCapability(str::enter_bold_mode);
 
 	// The case becomes tricky when dealing with numerical
 	// capablities. To ease out development, a special var
 	// tdb::NP is provided which denotes NOT PRESENT
-	auto n = parser.getCapablity(num::columns);
+	auto n = parser.getCapability(num::columns);
 	if( n == tdb::NP){
 		// it ain't there
 	}
