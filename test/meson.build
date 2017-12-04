@@ -1,18 +1,11 @@
-test_sources = ['test.cpp']
+mainTest = executable('mainTest', 'test.cpp', include_directories : inc,
+        dependencies : [doctest, optional, variant])
+test('mainTest', mainTest)
 
-if meson.get_compiler('cpp').get_id() == 'clang'
-  extra_args = ['--coverage']
-else
-  extra_args = []
-endif
+stressTest = executable('stressTest', 'stressTest.cpp',
+        include_directories : inc, dependencies : [optional, variant])
+test('stressTest', stressTest)
 
-testexe = executable('testexe', test_sources, include_directories : inc,
-        dependencies : [gtest], link_args : extra_args)
-
-test('app test', testexe, args: '--gtest_color=yes')
-
-
-stressTestexe = executable('stressTestexe', 'stressTest.cpp',
-			include_directories : inc, link_args : extra_args)
-
-test('stressTest', stressTestexe)
+bench = executable('bench', 'bench.cpp',
+        include_directories : inc, dependencies : [optional, variant])
+test('bench', bench)

@@ -1,159 +1,144 @@
-#include <gtest/gtest.h>
-#include <termdb.hpp>
+#define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
+#include "doctest.h"
+
+#include "termdb.hpp"
 
 using namespace tdb;
 
-TEST(Constructor, Success)
+TEST_CASE("Successful construction")
 {
-	TermDb parser("xterm", "terminfo/");
+    TermDb parser("xterm", "terminfo/");
 
-	ASSERT_TRUE(parser);
-	ASSERT_EQ(0, parser.getStatus());
-	ASSERT_NE(0, parser.getTermName().size());
+    REQUIRE(parser);
+    REQUIRE(parser.getTermName().size() != 0);
 }
 
 
-TEST(Constructor, NON_EXISTENT_TERM)
+TEST_CASE("Failure to construct")
 {
-	TermDb parser("NON_EXISTENT_TERM_FOR_DEMO");
-
-	ASSERT_FALSE(parser);
-	ASSERT_NE(0, parser.getStatus());
-	ASSERT_EQ(-2, parser.getStatus());
+    try {
+        TermDb parser("NON_EXISTENT_TERM_FOR_DEMO");
+    } catch (std::error_code &e) {
+        REQUIRE(e == ParseError::ReadError);
+    }
 }
 
 
-TEST(Parse, Success)
+TEST_CASE("Successfull parsing")
 {
-	TermDb parser;
-	auto result = parser.parse("xterm", "terminfo/");
+    TermDb parser;
+    const auto result = parser.parse("xterm", "terminfo/");
 
-	ASSERT_TRUE(result);
-	ASSERT_TRUE(parser);
-	ASSERT_EQ(0, parser.getStatus());
+    REQUIRE(result);
+    REQUIRE(parser);
 }
 
 
-TEST(Parse, NON_EXISTENT_TERM)
+TEST_CASE("Failure before parsing")
 {
-	TermDb parser;
-	auto result = parser.parse("NON_EXISTENT_TERM_FOR_DEMO");
+    TermDb parser;
+    const auto result = parser.parse("NON_EXISTENT_TERM_FOR_DEMO");
 
-	ASSERT_FALSE(result);
-	ASSERT_FALSE(parser);
-	ASSERT_NE(0, parser.getStatus());
-	ASSERT_EQ(-2, parser.getStatus());
-	ASSERT_EQ(0, parser.getTermName().size());
+    REQUIRE_FALSE(result);
+    REQUIRE_FALSE(parser);
+    REQUIRE(parser.getTermName().size() == 0);
 }
 
 
-TEST(Parse, NoMagicBytes)
+TEST_CASE("No Magic Bytes")
 {
-	TermDb parser;
-	auto result = parser.parse("corrupt-magic", "terminfo/");
+    TermDb parser;
+    const auto result = parser.parse("corrupt-magic", "terminfo/");
 
-	ASSERT_FALSE(result);
-	ASSERT_FALSE(parser);
-	ASSERT_NE(0, parser.getStatus());
-	ASSERT_EQ(-3, parser.getStatus());
+    REQUIRE_FALSE(result);
+    REQUIRE_FALSE(parser);
 }
 
 
-TEST(Parse, Size0)
+TEST_CASE("Size0 Error")
 {
-	TermDb parser;
-	auto result = parser.parse("corrupt-size", "terminfo/");
+    TermDb parser;
+    const auto result = parser.parse("corrupt-size", "terminfo/");
 
-	ASSERT_FALSE(result);
-	ASSERT_FALSE(parser);
-	ASSERT_NE(0, parser.getStatus());
-	ASSERT_EQ(-2, parser.getStatus());
+    REQUIRE_FALSE(result);
+    REQUIRE_FALSE(parser);
 }
 
 
-TEST(Parse, Corrupted)
+TEST_CASE("Corrupted Database")
 {
-	TermDb parser;
-	auto result = parser.parse("corrupted", "terminfo/");
+    TermDb parser;
+    const auto result = parser.parse("corrupted", "terminfo/");
 
-	ASSERT_FALSE(result);
-	ASSERT_FALSE(parser);
-	ASSERT_NE(0, parser.getStatus());
-	ASSERT_EQ(-4, parser.getStatus());
+    REQUIRE_FALSE(result);
+    REQUIRE_FALSE(parser);
 }
 
 
-TEST(Parse, DataResets)
+TEST_CASE("DataResets successfully")
 {
-	TermDb parser;
-	auto result = parser.parse("xterm", "terminfo/");
-	EXPECT_TRUE(result);
+    TermDb parser;
+    auto result = parser.parse("xterm", "terminfo/");
+    REQUIRE(result);
 
-	auto name = parser.getTermName();
-	result    = parser.parse("adm3a", "terminfo/");
-	EXPECT_TRUE(result);
+    auto name = parser.getTermName();
+    result    = parser.parse("adm3a", "terminfo/");
+    REQUIRE(result);
 
-	ASSERT_NE(name, parser.getTermName());
+    REQUIRE_FALSE(parser.getTermName() == name);
 }
 
 
-TEST(Parse, WrongArguments)
+TEST_CASE("Wrong Arguments")
 {
-	TermDb parser;
-	auto result = parser.parse("");
-	ASSERT_FALSE(result);
+    TermDb parser;
+    auto result = parser.parse("");
+    REQUIRE_FALSE(result);
 
-	result = parser.parse("xterm", "");
-	ASSERT_FALSE(result);
+    result = parser.parse("xterm", "");
+    REQUIRE_FALSE(result);
 }
 
 
-TEST(Capablities, Name)
+TEST_CASE("Name")
 {
-	TermDb parser("adm3a", "terminfo/");
-	auto name = parser.getTermName();
+    TermDb parser("adm3a", "terminfo/");
+    auto name = parser.getTermName();
 
-	ASSERT_EQ("adm3a|lsi adm3a", name);
+    REQUIRE(name == "adm3a|lsi adm3a");
 }
 
 
-TEST(Capablities, Booleans)
+TEST_CASE("Booleans")
 {
-	TermDb parser("adm3a", "terminfo/");
+    TermDb parser("adm3a", "terminfo/");
+    std::bitset<44> arr;
 
-	std::bitset<44> arr;
+    for (auto i = 0; i < 44; ++i) {
+        auto currCap = static_cast<bin>(i);
+        arr[i]       = parser.getCapablity(currCap);
+    }
 
-	for (auto i = 0; i < 44; ++i) {
-		auto currCap = static_cast<bin>(i);
-		arr[i]       = parser.getCapablity(currCap);
-	}
-
-	auto revString = "00000010000000000000000000000000000000000010";
-	ASSERT_EQ(revString, arr.to_string());
+    auto revString = "00000010000000000000000000000000000000000010";
+    REQUIRE(arr.to_string() == revString);
 }
 
 
-TEST(Capablities, Numbers)
+TEST_CASE("Numbers")
 {
-	TermDb parser("adm3a", "terminfo/");
+    TermDb parser("adm3a", "terminfo/");
 
-	std::vector<uint16_t> hardNums(39, 65535);
-	// hardocoded for adm3a
-	hardNums[0] = 80;
-	hardNums[2] = 24;
+    std::vector<uint16_t> hardNums(39, 65535);
+    // hardocoded for adm3a
+    hardNums[0] = 80;
+    hardNums[2] = 24;
 
-	std::vector<uint16_t> parsedNums(39, 65535);
+    std::vector<uint16_t> parsedNums(39, 65535);
 
-	for (auto i = 0; i < 39; ++i) {
-		auto currCap  = static_cast<num>(i);
-		parsedNums[i] = parser.getCapablity(currCap);
-	}
+    for (auto i = 0; i < 39; ++i) {
+        auto currCap  = static_cast<num>(i);
+        parsedNums[i] = parser.getCapablity(currCap);
+    }
 
-	ASSERT_EQ(hardNums.size(), parsedNums.size())
-	  << "Vectors hardNums and parsedNums are of unequal length";
-
-	for (size_t i = 0; i < hardNums.size(); ++i) {
-		EXPECT_EQ(hardNums[i], parsedNums[i])
-		  << "Vectors hardNums and parsedNums differ at index " << i;
-	}
+    REQUIRE(parsedNums.size() == hardNums.size());
 }

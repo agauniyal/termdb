@@ -1,47 +1,56 @@
-#include <termdb.hpp>
+#include "termdb.hpp"
 #include <iostream>
-
-using namespace tdb;
+#include <sstream>
 
 int main()
 {
-	std::ifstream names("stressTestTerms.txt");
-	std::ofstream output("output.txt");
-	if (!names || !output) {
-		return -1;
-	}
+    using namespace tdb;
+    using namespace std;
 
-	std::vector<std::string> nameList;
-	nameList.reserve(2718);
-	std::string name;
-	TermDb parser;
+    ifstream names("stressTestTerms.txt");
+    if (!names) {
+        return -1;
+    }
 
-	while (std::getline(names, name)) {
-		nameList.emplace_back(name);
-	}
+    vector<string> nameList;
+    nameList.reserve(2718);
 
-	for (auto &term : nameList) {
-		parser.parse(term, "mirror/");
-		std::string termName(parser.getTermName());
+    // make list of names
+    string name;
+    while (getline(names, name)) {
+        nameList.emplace_back(name);
+    }
 
-		for (auto i = 0; i < tdb::numCapBool; ++i) {
-			const auto b = parser.getCapablity(static_cast<bin>(i));
-			output << b << " ";
-		}
-		output << "\n";
+    TermDb parser;
+    ostringstream buffer;
+    for (auto &term : nameList) {
+        parser.parse(term, "mirror/");
+        string termName(parser.getTermName());
 
-		for (auto i = 0; i < tdb::numCapNum; ++i) {
-			const auto n = parser.getCapablity(static_cast<num>(i));
-			output << n << " ";
-		}
-		output << "\n";
+        for (auto i = 0; i < tdb::numCapBool; ++i) {
+            const auto b = parser.getCapablity(static_cast<bin>(i));
+            buffer << b << " ";
+        }
+        buffer << "\n";
 
-		for (auto i = 0; i < tdb::numCapStr; ++i) {
-			const auto s = parser.getCapablity(static_cast<str>(i));
-			output << s << " ";
-		}
-		output << "\n\n";
-	}
+        for (auto i = 0; i < tdb::numCapNum; ++i) {
+            const auto n = parser.getCapablity(static_cast<num>(i));
+            buffer << n << " ";
+        }
+        buffer << "\n";
 
-	return 0;
+        for (auto i = 0; i < tdb::numCapStr; ++i) {
+            const auto s = parser.getCapablity(static_cast<str>(i), 1, 1, 1, 1,
+                                               1, 1, 1, 1, 1);
+            buffer << s << " ";
+        }
+        buffer << "\n\n";
+    }
+
+    ofstream output("output.txt");
+    if (output) {
+        output << buffer.str();
+    } else {
+        return -1;
+    }
 }

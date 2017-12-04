@@ -8,7 +8,7 @@ matrix:
       addons:
         apt:
           sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-4.8']
+          packages: ['g++-4.8', 'cppcheck']
       env:
         - COMPILER=g++-4.8
 
@@ -18,7 +18,7 @@ matrix:
       addons:
         apt:
           sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-4.9']
+          packages: ['g++-4.9', 'cppcheck']
       env:
         - COMPILER=g++-4.9
 
@@ -28,7 +28,7 @@ matrix:
       addons:
         apt:
           sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-5']
+          packages: ['g++-5', 'cppcheck']
 
       env:
         - COMPILER=g++-5
@@ -39,7 +39,7 @@ matrix:
       addons:
         apt:
           sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-6']
+          packages: ['g++-6', 'cppcheck']
 
       env:
         - COMPILER=g++-6
@@ -50,7 +50,7 @@ matrix:
       addons:
         apt:
           sources: ['ubuntu-toolchain-r-test', 'llvm-toolchain-precise-3.5']
-          packages: ['clang-3.5']
+          packages: ['clang-3.5', 'cppcheck']
       env:
         - COMPILER=clang++-3.5
 
@@ -60,7 +60,7 @@ matrix:
       addons:
         apt:
           sources: ['ubuntu-toolchain-r-test', 'llvm-toolchain-precise-3.6']
-          packages: ['clang-3.6']
+          packages: ['clang-3.6', 'cppcheck']
       env:
         - COMPILER=clang++-3.6
 
@@ -70,7 +70,7 @@ matrix:
       addons:
         apt:
           sources: ['ubuntu-toolchain-r-test', 'llvm-toolchain-precise-3.7']
-          packages: ['clang-3.7']
+          packages: ['clang-3.7', 'cppcheck']
       env:
         - COMPILER=clang++-3.7
 
@@ -80,27 +80,56 @@ matrix:
       addons:
         apt:
           sources: ['ubuntu-toolchain-r-test', 'llvm-toolchain-precise-3.8']
-          packages: ['clang-3.8']
+          packages: ['clang-3.8', 'cppcheck']
       env:
         - COMPILER=clang++-3.8
 
 
 install:
-  - wget https://github.com/ninja-build/ninja/releases/download/v1.7.2/ninja-linux.zip && unzip -q ninja-linux.zip -d build
+  - wget https://github.com/ninja-build/ninja/releases/download/v1.7.2/ninja-linux.zip && unzip -q ninja-linux.zip -d build-ninja
   - pip3 install meson
-  - export PATH="`pwd`/build:${PATH}"
+  - pip3 install conan
+  - export PATH="`pwd`/build-ninja:${PATH}"
 
 before_script:
   - export CXX=$COMPILER
-  - mkdir build2
-  - cd build2
-  - meson --warnlevel=3 -Db_coverage=true ..
+  - mkdir debug && cd debug
+  - conan install ..
+  - conan build ..
   - ninja extract_data
+  - meson configure -Dbuildtype=debug
+  - meson configure -Dwarning_level=3
+  - meson configure -Db_sanitize="address,undefined"
+  - meson configure -Db_coverage=true
+  - ninja
+  - cd ..
+  - mkdir release-sanitize && cd release-sanitize
+  - conan install ..
+  - conan build ..
+  - ninja extract_data
+  - meson configure -Dbuildtype=release
+  - meson configure -Dwarning_level=3
+  - meson configure -Db_sanitize="address,undefined"
+  - ninja
+  - cd ..
+  - mkdir release && cd release
+  - conan install ..
+  - conan build ..
+  - ninja extract_data
+  - meson configure -Dbuildtype=release
+  - meson configure -Dwarning_level=3
+  - ninja
+  - cd ..
 
 script:
-  - ninja
-  - ./test/testexe
-  - ./test/stressTestexe
+  - cd debug
+  - ninja-cppcheck
+  - ./test/mainTest && ./test/stressTestexe && ./test/bench
+  - cd .. && cd release-sanitize
+  - ./test/mainTest && ./test/stressTestexe && ./test/bench
+  - cd .. && cd release
+  - ./test/mainTest && ./test/stressTestexe && ./test/bench
+  - cd .. && cd debug
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
