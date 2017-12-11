@@ -1,95 +1,120 @@
-language: cpp
+dist: trusty
+sudo: false
+group: travis_latest
+language: c++
+cache: ccache
+
+env:
+  global:
+  - COMPILER=g++
+
+addons:
+  apt:
+    sources: &apt_sources
+      - ubuntu-toolchain-r-test
+      - llvm-toolchain-precise-3.5
+      - llvm-toolchain-precise-3.6
+      - llvm-toolchain-precise-3.7
+      - llvm-toolchain-precise-3.8
+      - llvm-toolchain-trusty-3.9
+      - llvm-toolchain-trusty-4.0
+      - llvm-toolchain-trusty-5.0
+
+compiler: clang
+os: linux
 
 matrix:
+  fast_finish: true
   include:
-    - os: linux
-      dist: trusty
+    - env: COMPILER=g++-5
       compiler: gcc
-      addons:
+      addons: &gcc5
         apt:
-          sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-4.8', 'cppcheck']
-      env:
-        - COMPILER=g++-4.8
+          packages: ["g++-5", "python3-pip", "lcov"]
+          sources: *apt_sources
 
-    - os: linux
-      dist: trusty
+    - env: COMPILER=g++-6
       compiler: gcc
-      addons:
+      addons: &gcc6
         apt:
-          sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-4.9', 'cppcheck']
-      env:
-        - COMPILER=g++-4.9
+          packages: ["g++-6", "python3-pip", "lcov"]
+          sources: *apt_sources
 
-    - os: linux
-      dist: trusty
+    - env: COMPILER=g++-7
       compiler: gcc
-      addons:
+      addons: &gcc7
         apt:
-          sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-5', 'cppcheck']
+          packages: ["g++-7", "python3-pip", "lcov"]
+          sources: *apt_sources
 
-      env:
-        - COMPILER=g++-5
-
-    - os: linux
-      dist: trusty
-      compiler: gcc
-      addons:
-        apt:
-          sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-6', 'cppcheck']
-
-      env:
-        - COMPILER=g++-6
-
-    - os: linux
-      dist: trusty
+    - env: COMPILER=clang++-3.5
       compiler: clang
-      addons:
+      addons: &clang35
         apt:
-          sources: ['ubuntu-toolchain-r-test', 'llvm-toolchain-precise-3.5']
-          packages: ['clang-3.5', 'cppcheck']
-      env:
-        - COMPILER=clang++-3.5
+          packages: ["clang-3.5", "g++-7", "python3-pip", "lcov"]
+          sources: *apt_sources
 
-    - os: linux
-      dist: trusty
+    - env: COMPILER=clang++-3.6
       compiler: clang
-      addons:
+      addons: &clang36
         apt:
-          sources: ['ubuntu-toolchain-r-test', 'llvm-toolchain-precise-3.6']
-          packages: ['clang-3.6', 'cppcheck']
-      env:
-        - COMPILER=clang++-3.6
+          packages: ["clang-3.6", "g++-7", "python3-pip", "lcov"]
+          sources: *apt_sources
 
-    - os: linux
-      dist: trusty
+    - env: COMPILER=clang++-3.7
       compiler: clang
-      addons:
+      addons: &clang37
         apt:
-          sources: ['ubuntu-toolchain-r-test', 'llvm-toolchain-precise-3.7']
-          packages: ['clang-3.7', 'cppcheck']
-      env:
-        - COMPILER=clang++-3.7
+          packages: ["clang-3.7", "g++-7", "python3-pip", "lcov"]
+          sources: *apt_sources
 
-    - os: linux
-      dist: trusty
+    - env: COMPILER=clang++-3.8
       compiler: clang
-      addons:
+      addons: &clang38
         apt:
-          sources: ['ubuntu-toolchain-r-test', 'llvm-toolchain-precise-3.8']
-          packages: ['clang-3.8', 'cppcheck']
-      env:
-        - COMPILER=clang++-3.8
+          packages: ["clang-3.8", "g++-7", "python3-pip", "lcov"]
+          sources: *apt_sources
 
+    - env: COMPILER=clang++-3.9
+      compiler: clang
+      addons: &clang39
+        apt:
+          packages: ["clang-3.9", "g++-7", "python3-pip", "lcov"]
+          sources: *apt_sources
+
+    - env: COMPILER=clang++-4.0
+      compiler: clang
+      addons: &clang40
+        apt:
+          packages: ["clang-4.0", "g++-7", "python3-pip", "lcov"]
+          sources: *apt_sources
+
+    - env: COMPILER=clang++-5.0
+      compiler: clang
+      addons: &clang50
+        apt:
+          packages: ["clang-5.0", "g++-7", "python3-pip", "lcov"]
+          sources: *apt_sources
+
+  allow_failures:
+    - env: COMPILER=clang++-3.7
+      compiler: clang
+
+    - env: COMPILER=clang++-3.9
+      compiler: clang
 
 install:
-  - wget https://github.com/ninja-build/ninja/releases/download/v1.7.2/ninja-linux.zip && unzip -q ninja-linux.zip -d build-ninja
-  - pip3 install meson
-  - pip3 install conan
+  - wget https://github.com/ninja-build/ninja/releases/download/v1.8.2/ninja-linux.zip && unzip -q ninja-linux.zip -d build-ninja
+  - wget https://github.com/danmar/cppcheck/releases/download/1.81/cppcheck-1.81.zip && unzip -q cppcheck-1.81.zip
+  - cd cppcheck-1.81/ && make SRCDIR=build CFGDIR=cfg CXXFLAGS="-O1 -DNDEBUG" -j2 && cd ..
+  - pip3 install --user meson
+  - pip3 install --user conan
+  - conan remote add bincrafters https://api.bintray.com/conan/bincrafters/public-conan
+  - conan remote add rang https://api.bintray.com/conan/agauniyal/rang
+  - conan remote add nonstd-lite https://api.bintray.com/conan/agauniyal/nonstd-lite
   - export PATH="`pwd`/build-ninja:${PATH}"
+  - export PATH="`pwd`/cppcheck-1.81/:${PATH}"
+  - export PATH="~/.local/bin:${PATH}"
 
 before_script:
   - export CXX=$COMPILER
@@ -99,7 +124,7 @@ before_script:
   - ninja extract_data
   - meson configure -Dbuildtype=debug
   - meson configure -Dwarning_level=3
-  - meson configure -Db_sanitize="address,undefined"
+  - if [[ "${COMPILER}" == clang++* ]]; then meson configure -Db_sanitize="address,undefined"; fi;
   - meson configure -Db_coverage=true
   - ninja
   - cd ..
@@ -109,7 +134,7 @@ before_script:
   - ninja extract_data
   - meson configure -Dbuildtype=release
   - meson configure -Dwarning_level=3
-  - meson configure -Db_sanitize="address,undefined"
+  - if [[ "${COMPILER}" == clang* ]]; then meson configure -Db_sanitize="address,undefined"; fi;
   - ninja
   - cd ..
   - mkdir release && cd release
@@ -122,14 +147,10 @@ before_script:
   - cd ..
 
 script:
+  - cd release && ./test/mainTest && ./test/stressTest && ./test/bench && cd ..
+  - cd debug && ./test/mainTest && ./test/stressTest && ./test/bench && cd ..
+  - cd release-sanitize && ./test/mainTest && ./test/stressTest && ./test/bench && cd ..
   - cd debug
-  - ninja-cppcheck
-  - ./test/mainTest && ./test/stressTestexe && ./test/bench
-  - cd .. && cd release-sanitize
-  - ./test/mainTest && ./test/stressTestexe && ./test/bench
-  - cd .. && cd release
-  - ./test/mainTest && ./test/stressTestexe && ./test/bench
-  - cd .. && cd debug
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
