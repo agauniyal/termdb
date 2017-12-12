@@ -10,7 +10,7 @@ TEST_CASE("Successful construction")
     TermDb parser("xterm", "terminfo/");
 
     REQUIRE(parser);
-    REQUIRE(parser.getTermName().size() != 0);
+    REQUIRE(parser.getName().size() != 0);
 }
 
 
@@ -41,7 +41,7 @@ TEST_CASE("Failure before parsing")
 
     REQUIRE_FALSE(result);
     REQUIRE_FALSE(parser);
-    REQUIRE(parser.getTermName().size() == 0);
+    REQUIRE(parser.getName().size() == 0);
 }
 
 
@@ -81,11 +81,11 @@ TEST_CASE("DataResets successfully")
     auto result = parser.parse("xterm", "terminfo/");
     REQUIRE(result);
 
-    auto name = parser.getTermName();
+    auto name = parser.getName();
     result    = parser.parse("adm3a", "terminfo/");
     REQUIRE(result);
 
-    REQUIRE_FALSE(parser.getTermName() == name);
+    REQUIRE_FALSE(parser.getName() == name);
 }
 
 
@@ -103,7 +103,7 @@ TEST_CASE("Wrong Arguments")
 TEST_CASE("Name")
 {
     TermDb parser("adm3a", "terminfo/");
-    auto name = parser.getTermName();
+    auto name = parser.getName();
 
     REQUIRE(name == "adm3a|lsi adm3a");
 }
@@ -116,7 +116,7 @@ TEST_CASE("Booleans")
 
     for (auto i = 0; i < 44; ++i) {
         auto currCap = static_cast<bin>(i);
-        arr[i]       = parser.getCapablity(currCap);
+        arr[i]       = parser.get(currCap);
     }
 
     auto revString = "00000010000000000000000000000000000000000010";
@@ -137,7 +137,7 @@ TEST_CASE("Numbers")
 
     for (auto i = 0; i < 39; ++i) {
         auto currCap  = static_cast<num>(i);
-        parsedNums[i] = parser.getCapablity(currCap);
+        parsedNums[i] = parser.get(currCap);
     }
 
     REQUIRE(parsedNums.size() == hardNums.size());

@@ -14,10 +14,10 @@ int main()
 	auto result = parser.parse("xterm");
 
 	if (result) {
-		auto name = parser.getTermName();
-		auto b    = parser.getCapablity(bin::has_meta_key);
-		auto n    = parser.getCapablity(num::columns);
-		auto s    = parser.getCapablity(str::enter_bold_mode);
+		auto name = parser.getName();
+		auto b    = parser.get(bin::has_meta_key);
+		auto n    = parser.get(num::columns);
+		auto s    = parser.get(str::enter_bold_mode);
 
 		std::cout << "\n"
 		          << "Name: " << name << "\n"

@@ -617,7 +617,7 @@ public:
     }
 
     explicit operator bool() const noexcept { return isValidState; }
-    std::string getTermName() const { return name; }
+    std::string getName() const { return name; }
 
     bool parse(const std::string &_name, std::string _path = DPATH)
     {
@@ -631,22 +631,21 @@ public:
         return isValidState;
     }
 
-    bool getCapablity(tdb::bin _b) const noexcept
+    bool get(tdb::bin _b) const noexcept
     {
         const auto b = static_cast<int>(_b);
         return booleans[b];
     }
 
-    uint16_t getCapablity(tdb::num _n) const noexcept
+    uint16_t get(tdb::num _n) const noexcept
     {
         const auto n = static_cast<int>(_n);
         return numbers[n];
     }
 
-    std::string getCapablity(tdb::str _s, param p1 = 0l, param p2 = 0l,
-                             param p3 = 0l, param p4 = 0l, param p5 = 0l,
-                             param p6 = 0l, param p7 = 0l, param p8 = 0l,
-                             param p9 = 0l) const
+    std::string get(tdb::str _s, param p1 = 0l, param p2 = 0l, param p3 = 0l,
+                    param p4 = 0l, param p5 = 0l, param p6 = 0l, param p7 = 0l,
+                    param p8 = 0l, param p9 = 0l) const
     {
         static const std::regex pattern(delayStr, std::regex::optimize);
 
@@ -844,15 +843,6 @@ std::string TermDb::parser(const std::string &s, param p1, param p2, param p3,
                            param p4, param p5, param p6, param p7, param p8,
                            param p9) const
 {
-    using std::left;
-    using std::ostringstream;
-    using std::showpos;
-    using std::stack;
-    using std::string;
-    using std::vector;
-
-    using namespace mpark;
-
     const auto isDigit    = [](const char c) { return (c >= '0' && c <= '9'); };
     const auto isFlagChar = [](const char c) {
         return (c == '-' || c == '+' || c == '#' || c == ' ');
@@ -870,14 +860,13 @@ std::string TermDb::parser(const std::string &s, param p1, param p2, param p3,
     public:
         nonstd::optional<long> popNum() noexcept
         {
-            using namespace mpark;
             if (!stk.empty()) {
                 auto &element = stk.top();
                 try {
-                    auto num = get<long>(element);
+                    auto num = mpark::get<long>(element);
                     stk.pop();
                     return num;
-                } catch (bad_variant_access &e) {
+                } catch (mpark::bad_variant_access &e) {
                     return {};
                 }
             } else {
@@ -887,14 +876,13 @@ std::string TermDb::parser(const std::string &s, param p1, param p2, param p3,
 
         nonstd::optional<std::string> popString() noexcept
         {
-            using namespace mpark;
             if (!stk.empty()) {
                 auto &element = stk.top();
                 try {
-                    auto num = get<std::string>(element);
+                    auto num = mpark::get<std::string>(element);
                     stk.pop();
                     return num;
-                } catch (bad_variant_access &e) {
+                } catch (mpark::bad_variant_access &e) {
                     return {};
                 }
             } else {
@@ -930,10 +918,10 @@ std::string TermDb::parser(const std::string &s, param p1, param p2, param p3,
         Context() = delete;
     };
 
-    string result;
+    std::string result;
     stkOfParams stk;
-    stack<Context, vector<Context>> conList;
-    ostringstream oss;
+    std::stack<Context, std::vector<Context>> conList;
+    std::ostringstream oss;
     static Variables V{};
 
     bool activeParse     = false;
@@ -942,7 +930,7 @@ std::string TermDb::parser(const std::string &s, param p1, param p2, param p3,
 
     bool prependBase  = false;
     bool prependSpace = false;
-    auto precision    = string::npos;
+    auto precision    = std::string::npos;
 
     for (decltype(strLength) i = 0; i < strLength; ++i) {
         // checks if % encoding has started
@@ -1033,11 +1021,11 @@ std::string TermDb::parser(const std::string &s, param p1, param p2, param p3,
                     break;
                 }
                 switch (s[i]) {
-                    case '-': oss << left; break;
+                    case '-': oss << std::left; break;
                     case '#': prependBase = true; break;
                     case '+':
                     case ' ':
-                        oss << showpos;
+                        oss << std::showpos;
                         prependSpace = (s[i] == ' ');
                         break;
                     default: incorrectString = true; break;
@@ -1146,7 +1134,7 @@ std::string TermDb::parser(const std::string &s, param p1, param p2, param p3,
                     oss.str("");
                     prependBase  = false;
                     prependSpace = false;
-                    precision    = string::npos;
+                    precision    = std::string::npos;
                 } else {
                     incorrectString = true;
                 }
@@ -1206,11 +1194,11 @@ std::string TermDb::parser(const std::string &s, param p1, param p2, param p3,
 
             case 'i': {
                 try {
-                    auto &param1 = get<long>(p1);
-                    auto &param2 = get<long>(p2);
+                    auto &param1 = mpark::get<long>(p1);
+                    auto &param2 = mpark::get<long>(p2);
                     ++param1;
                     ++param2;
-                } catch (bad_variant_access &e) {
+                } catch (mpark::bad_variant_access &e) {
                     incorrectString = true;
                 }
                 break;
