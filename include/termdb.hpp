@@ -599,7 +599,7 @@ private:
     // https://regex101.com/r/GwGLfk/1
     static constexpr auto delayStr = R"(\$<\d+(\.\d{1})?((\/?\*?)|(\*?\/?))>)";
 
-    std::error_code loadDB(const std::string &, std::string);
+    std::error_code loadDB(const std::string, std::string);
     void escape(std::string &) const;
     std::string parser(const std::string &, param, param, param, param, param,
                        param, param, param, param) const;
@@ -619,7 +619,7 @@ public:
     explicit operator bool() const noexcept { return isValidState; }
     std::string getName() const { return name; }
 
-    bool parse(const std::string &_name, std::string _path = DPATH)
+    bool parse(const std::string _name, std::string _path = DPATH)
     {
         name.clear();
         booleans.reset();
@@ -666,19 +666,43 @@ public:
 };
 
 
-std::error_code TermDb::loadDB(const std::string &_name, std::string _path)
+std::error_code TermDb::loadDB(const std::string _name, std::string _path)
 {
+
+    const auto hashCharacter = [](unsigned char c) {
+        if (c < 10) {
+            return c + '0';
+        } else {
+            return (c - 10) + 'a';
+        }
+    };
+
     std::error_code ec = tdb::ParseError::Success;
     if (_name.empty() || _path.empty()) {
         ec = tdb::ParseError::ReadError;
         return ec;
     }
 
-    _path.append(_name, 0, 1).append(1, '/').append(_name);
-    std::ifstream db(_path.c_str(), std::ios::binary | std::ios::ate);
+
+    std::string tryPath = _path;
+    tryPath.append(_name, 0, 1).append(1, '/').append(_name);
+    std::ifstream db(tryPath.c_str(), std::ios::binary | std::ios::ate);
     if (!db) {
-        ec = tdb::ParseError::ReadError;
-        return ec;
+        // try using hash value
+        char hash[2];
+        unsigned char firstchar = _name[0];
+
+        hash[0] = hashCharacter((firstchar & 0xF0) >> 4);
+        hash[1] = hashCharacter(firstchar & 0x0F);
+        _path.append(&hash[0], 2).append(1, '/').append(_name);
+
+        db.clear();
+        db.open(_path, std::ios::binary | std::ios::ate);
+
+        if (!db) {
+            ec = tdb::ParseError::ReadError;
+            return ec;
+        }
     }
 
     const int size = db.tellg();
