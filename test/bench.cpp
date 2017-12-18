@@ -31,7 +31,7 @@ void runParser(const vector<TermDb> &parsers)
         }
         for (auto i = 0; i < tdb::numCapNum; ++i) {
             const auto n = parser.get(static_cast<num>(i));
-            buffer << n;
+            buffer << n.value_or(0);
         }
         for (auto i = 0; i < tdb::numCapStr; ++i) {
             const auto s = parser.get(static_cast<str>(i), 1, 1, 1, 1,

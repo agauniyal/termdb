@@ -49,18 +49,11 @@ int main()
 
 	/* The difference b/w constructor and parse() method
 	   is that parse() method returns a boolean result
-	   indicating success of operation while constructor cannot
+	   indicating success of operation while constructor throws exception
 	*/
 
-	// so how to check for errors?
+	// this throws exception
 	TermDb parser3("aaaa");
-	auto res = parser3.getStatus();
-
-	if(res < 0){
-		std::cerr << "UhOH!!!";
-	} else {
-		// do your magic ;)
-	}
 }
 ```
 
@@ -80,24 +73,16 @@ int main()
 	// in case said capablity is not found for given terminal
 	auto s = parser.get(str::enter_bold_mode);
 
-	// The case becomes tricky when dealing with numerical
-	// capablities. To ease out development, a special var
-	// tdb::NP is provided which denotes NOT PRESENT
-	auto n = parser.get(num::columns);
-	if( n == tdb::NP){
-		// it ain't there
+	// An optional type is returned for numeric capablities
+	auto n1 = parser.get(num::columns);
+	if(n1){
+		cout << n1.value();
+	} else {
+		cerr << "Oops!";
 	}
-}
-```
 
-
-#### 4.
-```cpp
-{
-	// What about thread safety?
-
-	// Well either you can create new parser objects in each thread
-	// or in case you want to use same parser object, guard the
-	// constructor and/or parse() method with a lock_guard() or mutex.
+	// Can use handy .value_or() as well
+	auto n2 = parser.get(num::columns);
+	cout << n2.value_or(24);
 }
 ```

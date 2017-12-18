@@ -3,7 +3,7 @@ from conans import ConanFile, Meson
 
 class TermDbConan(ConanFile):
     name = "termdb"
-    version = "0.6.0"
+    version = "0.10.0"
     license = "MIT"
     url = "https://github.com/agauniyal/termdb"
     description = "Terminfo parser for modern c++"

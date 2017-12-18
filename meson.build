@@ -1,4 +1,4 @@
-project('termdb', 'cpp', version : '0.5.0',
+project('termdb', 'cpp', version : '0.10.0',
 		default_options : ['cpp_std=c++11'])
 
 inc = include_directories('include')

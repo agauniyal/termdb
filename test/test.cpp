@@ -137,7 +137,7 @@ TEST_CASE("Numbers")
 
     for (auto i = 0; i < 39; ++i) {
         auto currCap  = static_cast<num>(i);
-        parsedNums[i] = parser.get(currCap);
+        parsedNums[i] = parser.get(currCap).value_or(0);
     }
 
     REQUIRE(parsedNums.size() == hardNums.size());

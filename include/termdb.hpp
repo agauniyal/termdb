@@ -44,11 +44,6 @@ constexpr const auto numCapBool = 44;
 constexpr const auto numCapNum  = 39;
 constexpr const auto numCapStr  = 414;
 
-// NP represents 'Not Present' properties, represented by
-// -1 value in terminfo databases. Since uint16_t is unsigned
-// we need to represent it by special NP variable
-static constexpr auto NP = std::numeric_limits<uint16_t>::max();
-
 // param types
 using param = mpark::variant<long, std::string>;
 
@@ -623,7 +618,7 @@ public:
     {
         name.clear();
         booleans.reset();
-        numbers.fill(tdb::NP);
+        numbers.fill(std::numeric_limits<uint16_t>::max());
         stringOffset.clear();
         stringTable.clear();
         const auto error = loadDB(_name, _path);
@@ -637,10 +632,17 @@ public:
         return booleans[b];
     }
 
-    uint16_t get(tdb::num _n) const noexcept
+    nonstd::optional<uint16_t> get(tdb::num _n) const noexcept
     {
-        const auto n = static_cast<int>(_n);
-        return numbers[n];
+        // NP represents 'Not Present' properties, represented by
+        // -1 value in terminfo databases.
+        const auto n      = static_cast<int>(_n);
+        const auto result = numbers[n];
+        if (result == std::numeric_limits<uint16_t>::max()) {
+            return {};
+        } else {
+            return result;
+        }
     }
 
     std::string get(tdb::str _s, param p1 = 0l, param p2 = 0l, param p3 = 0l,
@@ -653,8 +655,9 @@ public:
         std::string result;
 
         if (!stringOffset.empty() && s < stringOffset.size()) {
-            const auto offset = stringOffset[s];
-            if (offset != tdb::NP && offset < stringTable.size()) {
+            const auto offset      = stringOffset[s];
+            constexpr auto INVALID = std::numeric_limits<uint16_t>::max();
+            if (offset != INVALID && offset < stringTable.size()) {
                 result.append(&stringTable[offset]);
                 escape(result);
                 result = std::regex_replace(result, pattern, "");

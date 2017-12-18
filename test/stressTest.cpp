@@ -35,7 +35,7 @@ int main()
 
         for (auto i = 0; i < tdb::numCapNum; ++i) {
             const auto n = parser.get(static_cast<num>(i));
-            buffer << n << " ";
+            buffer << n.value_or(0) << " ";
         }
         buffer << "\n";
 

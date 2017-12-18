@@ -22,7 +22,7 @@ int main()
 		std::cout << "\n"
 		          << "Name: " << name << "\n"
 		          << "Has Meta Key: " << std::boolalpha << b << "\n"
-		          << "Number of columns: " << n << "\n"
+		          << "Number of columns: " << n.value_or(24) << "\n"
 		          << "Bold Mode on: " << s << "I should be BOLD!"
 		          << "\n";
 	} else {
