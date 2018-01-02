@@ -1420,6 +1420,9 @@ std::string TermDb::parser(const std::string &s, param p1, param p2, param p3,
 		void emulate_vpa(const short) const noexcept;
 		void emulate_cnorm() const noexcept;
 		void emulate_civis() const noexcept;
+		void emulate_cpl(const short) const noexcept;
+		void emulate_cnl(const short) const noexcept;
+
 	public:
 		TermDb() = default;
 
@@ -1561,6 +1564,23 @@ std::string TermDb::parser(const std::string &s, param p1, param p2, param p3,
 		SetConsoleCursorInfo(consoleHandle, &cursor_hide_props);
 	}
 
+	void TermDb::emulate_cpl(const short jump = 1) const noexcept {
+		if (jump > 0) {
+			CONSOLE_SCREEN_BUFFER_INFO buffInfo;
+			GetConsoleScreenBufferInfo(consoleHandle, &buffInfo);
+			short destRow = max(buffInfo.srWindow.Top, buffInfo.dwCursorPosition.Y - jump);
+			SetConsoleCursorPosition(consoleHandle, { buffInfo.srWindow.Left, destRow });
+		}
+	}
+
+	void TermDb::emulate_cnl(const short jump = 1) const noexcept {
+		if (jump > 0) {
+			CONSOLE_SCREEN_BUFFER_INFO buffInfo;
+			GetConsoleScreenBufferInfo(consoleHandle, &buffInfo);
+			short destRow = min(buffInfo.srWindow.Bottom, buffInfo.dwCursorPosition.Y + jump);
+			SetConsoleCursorPosition(consoleHandle, { buffInfo.srWindow.Left, destRow });
+		}
+	}
 
 
 #endif
