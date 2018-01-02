@@ -1416,6 +1416,10 @@ std::string TermDb::parser(const std::string &s, param p1, param p2, param p3,
 		void emulate_cud(const short) const noexcept;
 		void emulate_cuf(const short) const noexcept;
 		void emulate_cub(const short) const noexcept;
+		void emulate_cha(const short) const noexcept;
+		void emulate_vpa(const short) const noexcept;
+		void emulate_cnorm() const noexcept;
+		void emulate_civis() const noexcept;
 	public:
 		TermDb() = default;
 
@@ -1526,6 +1530,37 @@ std::string TermDb::parser(const std::string &s, param p1, param p2, param p3,
 			SetConsoleCursorPosition(consoleHandle, { destCol, buffInfo.dwCursorPosition.Y });
 		}
 	}
+
+	void TermDb::emulate_cha(const short destCol = 1) const noexcept {
+		if (destCol > 0) {
+			CONSOLE_SCREEN_BUFFER_INFO buffInfo;
+			GetConsoleScreenBufferInfo(consoleHandle, &buffInfo);
+			if (buffInfo.srWindow.Left <= destCol and destCol <= buffInfo.srWindow.Right) {
+				SetConsoleCursorPosition(consoleHandle, { buffInfo.srWindow.Left + destCol - 1, buffInfo.dwCursorPosition.Y });
+			}
+		}
+	}
+
+	void TermDb::emulate_vpa(const short destRow) const noexcept {
+		if (destRow > 0) {
+			CONSOLE_SCREEN_BUFFER_INFO buffInfo;
+			GetConsoleScreenBufferInfo(consoleHandle, &buffInfo);
+			if (buffInfo.srWindow.Top <= destRow and destRow <= buffInfo.srWindow.Bottom) {
+				SetConsoleCursorPosition(consoleHandle, { buffInfo.dwCursorPosition.X , buffInfo.srWindow.Top + destRow - 1 });
+			}
+		}
+	}
+
+	void TermDb::emulate_cnorm() const noexcept {
+		CONSOLE_CURSOR_INFO cursor_show_props{ 1, true };
+		SetConsoleCursorInfo(consoleHandle, &cursor_show_props);
+	}
+
+	void TermDb::emulate_civis() const noexcept {
+		CONSOLE_CURSOR_INFO cursor_hide_props{ 1, false };
+		SetConsoleCursorInfo(consoleHandle, &cursor_hide_props);
+	}
+
 
 
 #endif
