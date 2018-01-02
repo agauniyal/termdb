@@ -1448,6 +1448,10 @@ namespace tdb {
 		HANDLE consoleHandle;
 
 		void emulate_clear() const noexcept;
+		void emulate_cup(const short) const noexcept;
+		void emulate_cud(const short) const noexcept;
+		void emulate_cuf(const short) const noexcept;
+		void emulate_cub(const short) const noexcept;
 	public:
 		TermDb() = default;
 
@@ -1521,8 +1525,44 @@ namespace tdb {
 		FillConsoleOutputCharacter(consoleHandle, ' ', totalChars, startPos, &charsWritten);
 		FillConsoleOutputAttribute(consoleHandle, buffInfo.wAttributes, totalChars, startPos, &charsWritten); // Resetting attributes
 		SetConsoleCursorPosition(consoleHandle, startPos); // Position cursor to home
-
 	}
+
+	void TermDb::emulate_cup(const short jump = 1) const noexcept {
+		if (jump > 0) {
+			CONSOLE_SCREEN_BUFFER_INFO buffInfo;
+			GetConsoleScreenBufferInfo(consoleHandle, &buffInfo);
+			short destRow = max(buffInfo.srWindow.Top, buffInfo.dwCursorPosition.Y - jump);
+			SetConsoleCursorPosition(consoleHandle, { buffInfo.dwCursorPosition.X, destRow });
+		}
+	}
+
+	void TermDb::emulate_cud(const short jump = 1) const noexcept {
+		if (jump > 0) {
+			CONSOLE_SCREEN_BUFFER_INFO buffInfo;
+			GetConsoleScreenBufferInfo(consoleHandle, &buffInfo);
+			short destRow = min(buffInfo.srWindow.Bottom, buffInfo.dwCursorPosition.Y + jump);
+			SetConsoleCursorPosition(consoleHandle, { buffInfo.dwCursorPosition.X, destRow });
+		}
+	}
+
+	void TermDb::emulate_cuf(const short jump = 1) const noexcept {
+		if (jump > 0) {
+			CONSOLE_SCREEN_BUFFER_INFO buffInfo;
+			GetConsoleScreenBufferInfo(consoleHandle, &buffInfo);
+			short destCol = min(buffInfo.srWindow.Right, buffInfo.dwCursorPosition.X + jump);
+			SetConsoleCursorPosition(consoleHandle, { destCol, buffInfo.dwCursorPosition.Y });
+		}
+	}
+
+	void TermDb::emulate_cub(const short jump = 1) const noexcept {
+		if (jump > 0) {
+			CONSOLE_SCREEN_BUFFER_INFO buffInfo;
+			GetConsoleScreenBufferInfo(consoleHandle, &buffInfo);
+			short destCol = max(buffInfo.srWindow.Left, buffInfo.dwCursorPosition.X - jump);
+			SetConsoleCursorPosition(consoleHandle, { destCol, buffInfo.dwCursorPosition.Y });
+		}
+	}
+
 
 #endif
 
