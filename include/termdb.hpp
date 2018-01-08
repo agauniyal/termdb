@@ -28,6 +28,10 @@
 #include <regex>
 #include <system_error>
 
+#if defined(OS_WIN)
+#include <windows.h>
+#include <VersionHelpers.h>
+#endif
 
 namespace tdb {
 enum class ParseError { Success, ReadError, BadDatabase, MagicByteError };
@@ -1400,29 +1404,27 @@ std::string TermDb::parser(const std::string &s, param p1, param p2, param p3,
 }
 
 #elif defined(OS_WIN)
-#include <algorithm>
-#include <windows.h>
-#include <VersionHelpers.h>
 
 	class TermDb {
 	private:
 		std::string name;
 		bool isValidState = false;
-		bool isLessThanWin10;
-		HANDLE consoleHandle;
+		bool isLessThanWin10 = false;
+		HANDLE consoleHandle = nullptr;
 
-		void emulate_clear() const noexcept;
-		void emulate_cup(const short) const noexcept;
-		void emulate_cud(const short) const noexcept;
-		void emulate_cuf(const short) const noexcept;
-		void emulate_cub(const short) const noexcept;
-		void emulate_cha(const short) const noexcept;
-		void emulate_vpa(const short) const noexcept;
-		void emulate_cnorm() const noexcept;
-		void emulate_civis() const noexcept;
-		void emulate_cpl(const short) const noexcept;
-		void emulate_cnl(const short) const noexcept;
+		void _emulate_clear() const noexcept;
+		void _emulate_cup(const short) const noexcept;
+		void _emulate_cud(const short) const noexcept;
+		void _emulate_cuf(const short) const noexcept;
+		void _emulate_cub(const short) const noexcept;
+		void _emulate_cha(const short) const noexcept;
+		void _emulate_vpa(const short) const noexcept;
+		void _emulate_cnorm() const noexcept;
+		void _emulate_civis() const noexcept;
+		void _emulate_cpl(const short) const noexcept;
+		void _emulate_cnl(const short) const noexcept;
 
+		std::string do_clear() const noexcept;
 	public:
 		TermDb() = default;
 
@@ -1432,8 +1434,8 @@ std::string TermDb::parser(const std::string &s, param p1, param p2, param p3,
 		explicit operator bool() const noexcept { return isValidState; }
 		std::string getName() const { return name; }
 
-		nonstd::optional<uint16_t> get(tdb::num _n) const { return 0; } // for now
-		bool get(tdb::bin _b) const noexcept { return false; } // for now
+		nonstd::optional<uint16_t> get(tdb::num _n) const { return 0; }
+		bool get(tdb::bin _b) const noexcept { return false; }
 
 		std::string parser(const std::string &s, param p1, param p2, param p3,
 			param p4, param p5, param p6, param p7, param p8,
@@ -1444,18 +1446,8 @@ std::string TermDb::parser(const std::string &s, param p1, param p2, param p3,
 			param p8 = 0l, param p9 = 0l) const {
 
 			if (isValidState) {
-				if (isLessThanWin10) {
-					switch (_s) {
-					case tdb::str::clear_screen: emulate_clear(); break;
-					default: break;
-					}
-					return "";
-				}
-				else {
-					switch (_s) {
-					case tdb::str::clear_screen: return "\x1b[2J";
-					default: return "";
-					}
+				switch (_s) {
+				case tdb::str::clear_screen: return do_clear(); break;
 				}
 			}
 			return "";
@@ -1466,17 +1458,15 @@ std::string TermDb::parser(const std::string &s, param p1, param p2, param p3,
 		consoleHandle = GetStdHandle(STD_OUTPUT_HANDLE);
 		if (consoleHandle == INVALID_HANDLE_VALUE) {
 			isValidState = false;
+			return isValidState;
 		}
 		else {
 			isValidState = true;
 		}
 
 		isLessThanWin10 = !IsWindows10OrGreater();
-		if (isLessThanWin10) {
-			name = "Less than Windows 10 Cmd";
-		}
-		else {
-			name = "Windows 10 Cmd";
+		name = "cmd.exe";
+		if (!isLessThanWin10) {
 			DWORD dwMode = 0;
 			GetConsoleMode(consoleHandle, &dwMode);
 			dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
@@ -1485,7 +1475,7 @@ std::string TermDb::parser(const std::string &s, param p1, param p2, param p3,
 		return isValidState;
 	}
 
-	void TermDb::emulate_clear() const noexcept {
+	void TermDb::_emulate_clear() const noexcept {
 		CONSOLE_SCREEN_BUFFER_INFO buffInfo;
 		GetConsoleScreenBufferInfo(consoleHandle, &buffInfo);
 
@@ -1498,7 +1488,7 @@ std::string TermDb::parser(const std::string &s, param p1, param p2, param p3,
 		SetConsoleCursorPosition(consoleHandle, startPos); // Position cursor to home
 	}
 
-	void TermDb::emulate_cup(const short jump = 1) const noexcept {
+	void TermDb::_emulate_cup(const short jump = 1) const noexcept {
 		if (jump > 0) {
 			CONSOLE_SCREEN_BUFFER_INFO buffInfo;
 			GetConsoleScreenBufferInfo(consoleHandle, &buffInfo);
@@ -1507,7 +1497,7 @@ std::string TermDb::parser(const std::string &s, param p1, param p2, param p3,
 		}
 	}
 
-	void TermDb::emulate_cud(const short jump = 1) const noexcept {
+	void TermDb::_emulate_cud(const short jump = 1) const noexcept {
 		if (jump > 0) {
 			CONSOLE_SCREEN_BUFFER_INFO buffInfo;
 			GetConsoleScreenBufferInfo(consoleHandle, &buffInfo);
@@ -1516,7 +1506,7 @@ std::string TermDb::parser(const std::string &s, param p1, param p2, param p3,
 		}
 	}
 
-	void TermDb::emulate_cuf(const short jump = 1) const noexcept {
+	void TermDb::_emulate_cuf(const short jump = 1) const noexcept {
 		if (jump > 0) {
 			CONSOLE_SCREEN_BUFFER_INFO buffInfo;
 			GetConsoleScreenBufferInfo(consoleHandle, &buffInfo);
@@ -1525,7 +1515,7 @@ std::string TermDb::parser(const std::string &s, param p1, param p2, param p3,
 		}
 	}
 
-	void TermDb::emulate_cub(const short jump = 1) const noexcept {
+	void TermDb::_emulate_cub(const short jump = 1) const noexcept {
 		if (jump > 0) {
 			CONSOLE_SCREEN_BUFFER_INFO buffInfo;
 			GetConsoleScreenBufferInfo(consoleHandle, &buffInfo);
@@ -1534,7 +1524,7 @@ std::string TermDb::parser(const std::string &s, param p1, param p2, param p3,
 		}
 	}
 
-	void TermDb::emulate_cha(const short destCol = 1) const noexcept {
+	void TermDb::_emulate_cha(const short destCol = 1) const noexcept {
 		if (destCol > 0) {
 			CONSOLE_SCREEN_BUFFER_INFO buffInfo;
 			GetConsoleScreenBufferInfo(consoleHandle, &buffInfo);
@@ -1544,7 +1534,7 @@ std::string TermDb::parser(const std::string &s, param p1, param p2, param p3,
 		}
 	}
 
-	void TermDb::emulate_vpa(const short destRow) const noexcept {
+	void TermDb::_emulate_vpa(const short destRow) const noexcept {
 		if (destRow > 0) {
 			CONSOLE_SCREEN_BUFFER_INFO buffInfo;
 			GetConsoleScreenBufferInfo(consoleHandle, &buffInfo);
@@ -1554,17 +1544,17 @@ std::string TermDb::parser(const std::string &s, param p1, param p2, param p3,
 		}
 	}
 
-	void TermDb::emulate_cnorm() const noexcept {
+	void TermDb::_emulate_cnorm() const noexcept {
 		CONSOLE_CURSOR_INFO cursor_show_props{ 1, true };
 		SetConsoleCursorInfo(consoleHandle, &cursor_show_props);
 	}
 
-	void TermDb::emulate_civis() const noexcept {
+	void TermDb::_emulate_civis() const noexcept {
 		CONSOLE_CURSOR_INFO cursor_hide_props{ 1, false };
 		SetConsoleCursorInfo(consoleHandle, &cursor_hide_props);
 	}
 
-	void TermDb::emulate_cpl(const short jump = 1) const noexcept {
+	void TermDb::_emulate_cpl(const short jump = 1) const noexcept {
 		if (jump > 0) {
 			CONSOLE_SCREEN_BUFFER_INFO buffInfo;
 			GetConsoleScreenBufferInfo(consoleHandle, &buffInfo);
@@ -1573,7 +1563,7 @@ std::string TermDb::parser(const std::string &s, param p1, param p2, param p3,
 		}
 	}
 
-	void TermDb::emulate_cnl(const short jump = 1) const noexcept {
+	void TermDb::_emulate_cnl(const short jump = 1) const noexcept {
 		if (jump > 0) {
 			CONSOLE_SCREEN_BUFFER_INFO buffInfo;
 			GetConsoleScreenBufferInfo(consoleHandle, &buffInfo);
@@ -1582,6 +1572,15 @@ std::string TermDb::parser(const std::string &s, param p1, param p2, param p3,
 		}
 	}
 
+	std::string TermDb::do_clear() const noexcept {
+		if (isLessThanWin10) {
+			_emulate_clear();
+			return "";
+		}
+		else {
+			return "\x1b[2J";
+		}
+	}
 
 #endif
 
