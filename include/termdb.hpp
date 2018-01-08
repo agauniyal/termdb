@@ -1447,12 +1447,13 @@ public:
                     param p8 = 0l, param p9 = 0l) const
     {
 
-        if (isValidState) {
-            switch (_s) {
-                case tdb::str::clear_screen: return do_clear(); break;
-            }
+        if (!isValidState) {
+            return "";
         }
-        return "";
+
+        switch (_s) {
+            case tdb::str::clear_screen: return do_clear(); break;
+        }
     }
 };
 
