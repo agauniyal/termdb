@@ -1405,182 +1405,217 @@ std::string TermDb::parser(const std::string &s, param p1, param p2, param p3,
 
 #elif defined(OS_WIN)
 
-	class TermDb {
-	private:
-		std::string name;
-		bool isValidState = false;
-		bool isLessThanWin10 = false;
-		HANDLE consoleHandle = nullptr;
+class TermDb {
+private:
+    std::string name;
+    bool isValidState    = false;
+    bool isLessThanWin10 = false;
+    HANDLE consoleHandle = nullptr;
 
-		void _emulate_clear() const noexcept;
-		void _emulate_cup(const short) const noexcept;
-		void _emulate_cud(const short) const noexcept;
-		void _emulate_cuf(const short) const noexcept;
-		void _emulate_cub(const short) const noexcept;
-		void _emulate_cha(const short) const noexcept;
-		void _emulate_vpa(const short) const noexcept;
-		void _emulate_cnorm() const noexcept;
-		void _emulate_civis() const noexcept;
-		void _emulate_cpl(const short) const noexcept;
-		void _emulate_cnl(const short) const noexcept;
+    void _emulate_clear() const noexcept;
+    void _emulate_cup(const short) const noexcept;
+    void _emulate_cud(const short) const noexcept;
+    void _emulate_cuf(const short) const noexcept;
+    void _emulate_cub(const short) const noexcept;
+    void _emulate_cha(const short) const noexcept;
+    void _emulate_vpa(const short) const noexcept;
+    void _emulate_cnorm() const noexcept;
+    void _emulate_civis() const noexcept;
+    void _emulate_cpl(const short) const noexcept;
+    void _emulate_cnl(const short) const noexcept;
 
-		std::string do_clear() const noexcept;
-	public:
-		TermDb() = default;
+    std::string do_clear() const noexcept;
 
-		TermDb(const std::string &, std::string) = delete;
-		bool parse(const std::string, std::string);
+public:
+    TermDb() = default;
 
-		explicit operator bool() const noexcept { return isValidState; }
-		std::string getName() const { return name; }
+    TermDb(const std::string &, std::string) = delete;
+    bool parse(const std::string, std::string);
 
-		nonstd::optional<uint16_t> get(tdb::num _n) const { return 0; }
-		bool get(tdb::bin _b) const noexcept { return false; }
+    explicit operator bool() const noexcept { return isValidState; }
+    std::string getName() const { return name; }
 
-		std::string parser(const std::string &s, param p1, param p2, param p3,
-			param p4, param p5, param p6, param p7, param p8,
-			param p9) const = delete;
+    nonstd::optional<uint16_t> get(tdb::num _n) const { return 0; }
+    bool get(tdb::bin _b) const noexcept { return false; }
 
-		std::string get(tdb::str _s, param p1 = 0l, param p2 = 0l, param p3 = 0l,
-			param p4 = 0l, param p5 = 0l, param p6 = 0l, param p7 = 0l,
-			param p8 = 0l, param p9 = 0l) const {
+    std::string parser(const std::string &s, param p1, param p2, param p3,
+                       param p4, param p5, param p6, param p7, param p8,
+                       param p9) const = delete;
 
-			if (isValidState) {
-				switch (_s) {
-				case tdb::str::clear_screen: return do_clear(); break;
-				}
-			}
-			return "";
-		}
-	};
+    std::string get(tdb::str _s, param p1 = 0l, param p2 = 0l, param p3 = 0l,
+                    param p4 = 0l, param p5 = 0l, param p6 = 0l, param p7 = 0l,
+                    param p8 = 0l, param p9 = 0l) const
+    {
 
-	bool TermDb::parse(const std::string _name = "", std::string _path = "") {
-		consoleHandle = GetStdHandle(STD_OUTPUT_HANDLE);
-		if (consoleHandle == INVALID_HANDLE_VALUE) {
-			isValidState = false;
-			return isValidState;
-		}
-		else {
-			isValidState = true;
-		}
+        if (isValidState) {
+            switch (_s) {
+                case tdb::str::clear_screen: return do_clear(); break;
+            }
+        }
+        return "";
+    }
+};
 
-		isLessThanWin10 = !IsWindows10OrGreater();
-		name = "cmd.exe";
-		if (!isLessThanWin10) {
-			DWORD dwMode = 0;
-			GetConsoleMode(consoleHandle, &dwMode);
-			dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
-			SetConsoleMode(consoleHandle, dwMode);
-		}
-		return isValidState;
-	}
+bool TermDb::parse(const std::string _name = "", std::string _path = "")
+{
+    consoleHandle = GetStdHandle(STD_OUTPUT_HANDLE);
+    if (consoleHandle == INVALID_HANDLE_VALUE) {
+        isValidState = false;
+        return isValidState;
+    } else {
+        isValidState = true;
+    }
 
-	void TermDb::_emulate_clear() const noexcept {
-		CONSOLE_SCREEN_BUFFER_INFO buffInfo;
-		GetConsoleScreenBufferInfo(consoleHandle, &buffInfo);
+    isLessThanWin10 = !IsWindows10OrGreater();
+    name            = "cmd.exe";
+    if (!isLessThanWin10) {
+        DWORD dwMode = 0;
+        GetConsoleMode(consoleHandle, &dwMode);
+        dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+        SetConsoleMode(consoleHandle, dwMode);
+    }
+    return isValidState;
+}
 
-		DWORD totalChars = buffInfo.dwSize.X * buffInfo.dwSize.Y;
-		COORD startPos = { 0, 0 };
-		DWORD charsWritten = 0;
+void TermDb::_emulate_clear() const noexcept
+{
+    CONSOLE_SCREEN_BUFFER_INFO buffInfo;
+    GetConsoleScreenBufferInfo(consoleHandle, &buffInfo);
 
-		FillConsoleOutputCharacter(consoleHandle, ' ', totalChars, startPos, &charsWritten);
-		FillConsoleOutputAttribute(consoleHandle, buffInfo.wAttributes, totalChars, startPos, &charsWritten); // Resetting attributes
-		SetConsoleCursorPosition(consoleHandle, startPos); // Position cursor to home
-	}
+    DWORD totalChars   = buffInfo.dwSize.X * buffInfo.dwSize.Y;
+    COORD startPos     = { 0, 0 };
+    DWORD charsWritten = 0;
 
-	void TermDb::_emulate_cup(const short jump = 1) const noexcept {
-		if (jump > 0) {
-			CONSOLE_SCREEN_BUFFER_INFO buffInfo;
-			GetConsoleScreenBufferInfo(consoleHandle, &buffInfo);
-			short destRow = max(buffInfo.srWindow.Top, buffInfo.dwCursorPosition.Y - jump);
-			SetConsoleCursorPosition(consoleHandle, { buffInfo.dwCursorPosition.X, destRow });
-		}
-	}
+    FillConsoleOutputCharacter(consoleHandle, ' ', totalChars, startPos,
+                               &charsWritten);
+    FillConsoleOutputAttribute(consoleHandle, buffInfo.wAttributes, totalChars,
+                               startPos,
+                               &charsWritten);  // Resetting attributes
+    SetConsoleCursorPosition(consoleHandle,
+                             startPos);  // Position cursor to home
+}
 
-	void TermDb::_emulate_cud(const short jump = 1) const noexcept {
-		if (jump > 0) {
-			CONSOLE_SCREEN_BUFFER_INFO buffInfo;
-			GetConsoleScreenBufferInfo(consoleHandle, &buffInfo);
-			short destRow = min(buffInfo.srWindow.Bottom, buffInfo.dwCursorPosition.Y + jump);
-			SetConsoleCursorPosition(consoleHandle, { buffInfo.dwCursorPosition.X, destRow });
-		}
-	}
+void TermDb::_emulate_cup(const short jump = 1) const noexcept
+{
+    if (jump > 0) {
+        CONSOLE_SCREEN_BUFFER_INFO buffInfo;
+        GetConsoleScreenBufferInfo(consoleHandle, &buffInfo);
+        short destRow
+          = max(buffInfo.srWindow.Top, buffInfo.dwCursorPosition.Y - jump);
+        SetConsoleCursorPosition(consoleHandle,
+                                 { buffInfo.dwCursorPosition.X, destRow });
+    }
+}
 
-	void TermDb::_emulate_cuf(const short jump = 1) const noexcept {
-		if (jump > 0) {
-			CONSOLE_SCREEN_BUFFER_INFO buffInfo;
-			GetConsoleScreenBufferInfo(consoleHandle, &buffInfo);
-			short destCol = min(buffInfo.srWindow.Right, buffInfo.dwCursorPosition.X + jump);
-			SetConsoleCursorPosition(consoleHandle, { destCol, buffInfo.dwCursorPosition.Y });
-		}
-	}
+void TermDb::_emulate_cud(const short jump = 1) const noexcept
+{
+    if (jump > 0) {
+        CONSOLE_SCREEN_BUFFER_INFO buffInfo;
+        GetConsoleScreenBufferInfo(consoleHandle, &buffInfo);
+        short destRow
+          = min(buffInfo.srWindow.Bottom, buffInfo.dwCursorPosition.Y + jump);
+        SetConsoleCursorPosition(consoleHandle,
+                                 { buffInfo.dwCursorPosition.X, destRow });
+    }
+}
 
-	void TermDb::_emulate_cub(const short jump = 1) const noexcept {
-		if (jump > 0) {
-			CONSOLE_SCREEN_BUFFER_INFO buffInfo;
-			GetConsoleScreenBufferInfo(consoleHandle, &buffInfo);
-			short destCol = max(buffInfo.srWindow.Left, buffInfo.dwCursorPosition.X - jump);
-			SetConsoleCursorPosition(consoleHandle, { destCol, buffInfo.dwCursorPosition.Y });
-		}
-	}
+void TermDb::_emulate_cuf(const short jump = 1) const noexcept
+{
+    if (jump > 0) {
+        CONSOLE_SCREEN_BUFFER_INFO buffInfo;
+        GetConsoleScreenBufferInfo(consoleHandle, &buffInfo);
+        short destCol
+          = min(buffInfo.srWindow.Right, buffInfo.dwCursorPosition.X + jump);
+        SetConsoleCursorPosition(consoleHandle,
+                                 { destCol, buffInfo.dwCursorPosition.Y });
+    }
+}
 
-	void TermDb::_emulate_cha(const short destCol = 1) const noexcept {
-		if (destCol > 0) {
-			CONSOLE_SCREEN_BUFFER_INFO buffInfo;
-			GetConsoleScreenBufferInfo(consoleHandle, &buffInfo);
-			if (buffInfo.srWindow.Left <= destCol and destCol <= buffInfo.srWindow.Right) {
-				SetConsoleCursorPosition(consoleHandle, { buffInfo.srWindow.Left + destCol - 1, buffInfo.dwCursorPosition.Y });
-			}
-		}
-	}
+void TermDb::_emulate_cub(const short jump = 1) const noexcept
+{
+    if (jump > 0) {
+        CONSOLE_SCREEN_BUFFER_INFO buffInfo;
+        GetConsoleScreenBufferInfo(consoleHandle, &buffInfo);
+        short destCol
+          = max(buffInfo.srWindow.Left, buffInfo.dwCursorPosition.X - jump);
+        SetConsoleCursorPosition(consoleHandle,
+                                 { destCol, buffInfo.dwCursorPosition.Y });
+    }
+}
 
-	void TermDb::_emulate_vpa(const short destRow) const noexcept {
-		if (destRow > 0) {
-			CONSOLE_SCREEN_BUFFER_INFO buffInfo;
-			GetConsoleScreenBufferInfo(consoleHandle, &buffInfo);
-			if (buffInfo.srWindow.Top <= destRow and destRow <= buffInfo.srWindow.Bottom) {
-				SetConsoleCursorPosition(consoleHandle, { buffInfo.dwCursorPosition.X , buffInfo.srWindow.Top + destRow - 1 });
-			}
-		}
-	}
+void TermDb::_emulate_cha(const short destCol = 1) const noexcept
+{
+    if (destCol > 0) {
+        CONSOLE_SCREEN_BUFFER_INFO buffInfo;
+        GetConsoleScreenBufferInfo(consoleHandle, &buffInfo);
+        if (buffInfo.srWindow.Left <= destCol
+            and destCol <= buffInfo.srWindow.Right) {
+            SetConsoleCursorPosition(consoleHandle,
+                                     { buffInfo.srWindow.Left + destCol - 1,
+                                       buffInfo.dwCursorPosition.Y });
+        }
+    }
+}
 
-	void TermDb::_emulate_cnorm() const noexcept {
-		CONSOLE_CURSOR_INFO cursor_show_props{ 1, true };
-		SetConsoleCursorInfo(consoleHandle, &cursor_show_props);
-	}
+void TermDb::_emulate_vpa(const short destRow) const noexcept
+{
+    if (destRow > 0) {
+        CONSOLE_SCREEN_BUFFER_INFO buffInfo;
+        GetConsoleScreenBufferInfo(consoleHandle, &buffInfo);
+        if (buffInfo.srWindow.Top <= destRow
+            and destRow <= buffInfo.srWindow.Bottom) {
+            SetConsoleCursorPosition(consoleHandle,
+                                     { buffInfo.dwCursorPosition.X,
+                                       buffInfo.srWindow.Top + destRow - 1 });
+        }
+    }
+}
 
-	void TermDb::_emulate_civis() const noexcept {
-		CONSOLE_CURSOR_INFO cursor_hide_props{ 1, false };
-		SetConsoleCursorInfo(consoleHandle, &cursor_hide_props);
-	}
+void TermDb::_emulate_cnorm() const noexcept
+{
+    CONSOLE_CURSOR_INFO cursor_show_props{ 1, true };
+    SetConsoleCursorInfo(consoleHandle, &cursor_show_props);
+}
 
-	void TermDb::_emulate_cpl(const short jump = 1) const noexcept {
-		if (jump > 0) {
-			CONSOLE_SCREEN_BUFFER_INFO buffInfo;
-			GetConsoleScreenBufferInfo(consoleHandle, &buffInfo);
-			short destRow = max(buffInfo.srWindow.Top, buffInfo.dwCursorPosition.Y - jump);
-			SetConsoleCursorPosition(consoleHandle, { buffInfo.srWindow.Left, destRow });
-		}
-	}
+void TermDb::_emulate_civis() const noexcept
+{
+    CONSOLE_CURSOR_INFO cursor_hide_props{ 1, false };
+    SetConsoleCursorInfo(consoleHandle, &cursor_hide_props);
+}
 
-	void TermDb::_emulate_cnl(const short jump = 1) const noexcept {
-		if (jump > 0) {
-			CONSOLE_SCREEN_BUFFER_INFO buffInfo;
-			GetConsoleScreenBufferInfo(consoleHandle, &buffInfo);
-			short destRow = min(buffInfo.srWindow.Bottom, buffInfo.dwCursorPosition.Y + jump);
-			SetConsoleCursorPosition(consoleHandle, { buffInfo.srWindow.Left, destRow });
-		}
-	}
+void TermDb::_emulate_cpl(const short jump = 1) const noexcept
+{
+    if (jump > 0) {
+        CONSOLE_SCREEN_BUFFER_INFO buffInfo;
+        GetConsoleScreenBufferInfo(consoleHandle, &buffInfo);
+        short destRow
+          = max(buffInfo.srWindow.Top, buffInfo.dwCursorPosition.Y - jump);
+        SetConsoleCursorPosition(consoleHandle,
+                                 { buffInfo.srWindow.Left, destRow });
+    }
+}
 
-	std::string TermDb::do_clear() const noexcept {
-		if (isLessThanWin10) {
-			_emulate_clear();
-			return "";
-		}
-		else {
-			return "\x1b[2J";
-		}
-	}
+void TermDb::_emulate_cnl(const short jump = 1) const noexcept
+{
+    if (jump > 0) {
+        CONSOLE_SCREEN_BUFFER_INFO buffInfo;
+        GetConsoleScreenBufferInfo(consoleHandle, &buffInfo);
+        short destRow
+          = min(buffInfo.srWindow.Bottom, buffInfo.dwCursorPosition.Y + jump);
+        SetConsoleCursorPosition(consoleHandle,
+                                 { buffInfo.srWindow.Left, destRow });
+    }
+}
+
+std::string TermDb::do_clear() const noexcept
+{
+    if (isLessThanWin10) {
+        _emulate_clear();
+        return "";
+    } else {
+        return "\x1b[2J";
+    }
+}
 
 #endif
 
