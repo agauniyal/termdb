@@ -1,0 +1,18 @@
+os: Visual Studio 2015
+
+branches:
+  only:
+    - feature/cmdTermDb
+
+environment:
+  matrix:
+    - arch: x86
+      compiler: msvc2015
+    - arch: x64
+      compiler: msvc2015
+
+platform:
+  - x64
+
+build_script:
+  - cmd: python --version
