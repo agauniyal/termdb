@@ -3,6 +3,15 @@
 #include <sstream>
 #include <chrono>
 
+#if defined(WIN32) || defined(_WIN32) || defined(_WIN64)
+namespace tdb {
+constexpr const auto numCapBool = 0;
+constexpr const auto numCapNum  = 0;
+constexpr const auto numCapStr  = 0;
+}  // namespace tdb
+#endif
+
+
 using namespace tdb;
 using namespace std;
 
@@ -34,8 +43,8 @@ void runParser(const vector<TermDb> &parsers)
             buffer << n.value_or(0);
         }
         for (auto i = 0; i < tdb::numCapStr; ++i) {
-            const auto s = parser.get(static_cast<str>(i), 1, 1, 1, 1,
-                                               1, 1, 1, 1, 1);
+            const auto s
+              = parser.get(static_cast<str>(i), 1, 1, 1, 1, 1, 1, 1, 1, 1);
             buffer << s;
         }
     }

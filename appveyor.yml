@@ -1,11 +1,14 @@
-os: Visual Studio 2015
+# os: Visual Studio 2015
 
-branches:
-  only:
-    - feature/cmdTermDb
+image:
+- Visual Studio 2017
 
 environment:
   matrix:
+    - arch: x86
+      compiler: msvc2017
+    - arch: x64
+      compiler: msvc2017
     - arch: x86
       compiler: msvc2015
     - arch: x64
@@ -14,5 +17,67 @@ environment:
 platform:
   - x64
 
+# init:
+#   - ps: iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+
+# on_finish:
+#   - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+
+install:
+  - ps:  wget  'https://github.com/ninja-build/ninja/releases/download/v1.8.2/ninja-win.zip' -OutFile ninja.zip
+  - cmd: 7z x ninja.zip -oC:\ninja > nul
+  - cmd: set PATH=C:\ninja;%PATH%
+  
+  - cmd: if %arch%==x86 (set MESON_PYTHON_PATH=C:\python35) else (set MESON_PYTHON_PATH=C:\python35-x64)
+  - cmd: set PATH=%MESON_PYTHON_PATH%;%MESON_PYTHON_PATH%\Scripts;%PATH%
+  - ps: if ($env:build_platform -eq 'x86') { 
+        $PKG_CONFIG_URL="ftp://ftp.gnome.org/pub/gnome/binaries/win32/dependencies/pkg-config-dev_0.23-3_win32.zip";
+        $GLIB_URL="ftp://ftp.gnome.org/pub/gnome/binaries/win32/glib/2.28/glib_2.28.8-1_win32.zip";
+        $GETTEXT_URL="ftp://ftp.gnome.org/pub/gnome/binaries/win32/dependencies/gettext-runtime_0.18.1.1-2_win32.zip";
+        } else 
+        { 
+        $PKG_CONFIG_URL="http://ftp.gnome.org/pub/gnome/binaries/win64/dependencies/pkg-config_0.23-2_win64.zip";
+        $GLIB_URL="http://ftp.gnome.org/pub/gnome/binaries/win64/glib/2.26/glib_2.26.1-1_win64.zip";
+        $GETTEXT_URL="http://ftp.gnome.org/pub/gnome/binaries/win64/dependencies/gettext-runtime_0.18.1.1-2_win64.zip";
+        }
+  - ps: wget $GLIB_URL -OutFile glib.zip
+  - ps: wget $GETTEXT_URL -OutFile gettext.zip
+  - ps: wget $PKG_CONFIG_URL -OutFile pkg_config.zip
+  
+  - cmd: 7z x glib.zip -oC:\glib > nul
+  - cmd: 7z x gettext.zip -oC:\gettext > nul
+  - cmd: 7z x pkg_config.zip -oC:\pkg_config > nul
+
+  - cmd: set PATH=C:\glib\bin\;C:\gettext\bin\;C:\pkg_config\bin\;%PATH%
+  # - cmd: ls ./
+  - cmd: python -m pip install meson conan
+
+  - cmd: pkg-config --version
+  - cmd: ninja --version
+  - cmd: meson --version
+  - cmd: conan --version
+
+  - cmd: if %compiler%==msvc2010 ( call "C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\vcvarsall.bat" %arch% )
+  - cmd: if %compiler%==msvc2015 ( call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" %arch% )
+  - cmd: if %compiler%==msvc2017 ( if %arch%==x64 ( call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvars64.bat"))
+  - cmd: if %compiler%==msvc2017 ( if %arch%==x86 ( call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvars32.bat"))
+  - cmd: conan remote add bincrafters https://api.bintray.com/conan/bincrafters/public-conan
+  - cmd: conan remote add rang https://api.bintray.com/conan/agauniyal/rang
+  - cmd: conan remote add nonstd-lite https://api.bintray.com/conan/agauniyal/nonstd-lite
+  
+
 build_script:
-  - cmd: python --version
+  - cmd: echo Building on %arch% with %compiler%
+  - cmd: ninja --version
+  - cmd: meson --version
+  - cmd: mkdir build && cd build
+  - cmd: ls ..
+  - cmd: conan install ..
+  - cmd: conan build ..
+  - cmd: ninja extract_data
+  - cmd: meson configure -Dbuildtype=debug
+  - cmd: meson configure -Dwarning_level=3
+  - cmd: ninja
+  - cmd: cd ..
+  # - cmd: PATH=%cd%;%MESON_PYTHON_PATH%;%PATH%; && python meson.build --backend=ninja builddir
+  # - cmd: PATH=%cd%;%MESON_PYTHON_PATH%;%PATH%; && ninja -C builddir
