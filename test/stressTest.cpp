@@ -2,6 +2,15 @@
 #include <iostream>
 #include <sstream>
 
+#if defined(OS_WIN)
+namespace tdb{
+constexpr const auto numCapBool = 0;
+constexpr const auto numCapNum = 0;
+constexpr const auto numCapStr = 0;
+}
+#endif
+
+
 int main()
 {
     using namespace tdb;
