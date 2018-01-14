@@ -9,7 +9,12 @@ variant = dependency('variant')
 
 subdir('test')
 
-extract_data = find_program('scripts/extract_data.sh')
+if host_machine.system() == 'linux'
+  extract_data = find_program('scripts/extract_data.sh')
+elif host_machine.system() == 'windows'
+  extract_data = find_program('scripts/extract_data.bat')
+endif
+
 run_target('extract_data', command : extract_data.path())
 
 run_target('cppcheck', command : ['cppcheck', '--project=' +

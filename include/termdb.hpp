@@ -1505,7 +1505,7 @@ void TermDb::_emulate_cup(const short jump = 1) const noexcept
         /*short destRow
             = std::max(buffInfo.srWindow.Top, buffInfo.dwCursorPosition.Y -
            jump);*/
-        auto row = buffInfo.dwCursorPosition.Y - jump;
+        short row = buffInfo.dwCursorPosition.Y - jump;
         short destRow
           = buffInfo.srWindow.Top >= row ? buffInfo.srWindow.Top : row;
         SetConsoleCursorPosition(consoleHandle,
@@ -1521,7 +1521,7 @@ void TermDb::_emulate_cud(const short jump = 1) const noexcept
         /*short destRow
             = std::min(buffInfo.srWindow.Bottom, buffInfo.dwCursorPosition.Y +
            jump);*/
-        auto row = buffInfo.dwCursorPosition.Y + jump;
+        short row = buffInfo.dwCursorPosition.Y + jump;
         short destRow
           = buffInfo.srWindow.Bottom <= row ? buffInfo.srWindow.Bottom : row;
         SetConsoleCursorPosition(consoleHandle,
@@ -1537,7 +1537,7 @@ void TermDb::_emulate_cuf(const short jump = 1) const noexcept
         /*short destCol
             = std::min(buffInfo.srWindow.Right, buffInfo.dwCursorPosition.X +
            jump);*/
-        auto col = buffInfo.dwCursorPosition.X + jump;
+        short col = buffInfo.dwCursorPosition.X + jump;
         short destCol
           = buffInfo.srWindow.Right <= col ? buffInfo.srWindow.Right : col;
         SetConsoleCursorPosition(consoleHandle,
@@ -1553,7 +1553,7 @@ void TermDb::_emulate_cub(const short jump = 1) const noexcept
         /*short destCol
             = std::max(buffInfo.srWindow.Left, buffInfo.dwCursorPosition.X -
            jump);*/
-        auto col = buffInfo.dwCursorPosition.X - jump;
+        short col = buffInfo.dwCursorPosition.X - jump;
         short destCol
           = buffInfo.srWindow.Left >= col ? buffInfo.srWindow.Left : col;
         SetConsoleCursorPosition(consoleHandle,
@@ -1609,7 +1609,7 @@ void TermDb::_emulate_cpl(const short jump = 1) const noexcept
         /*short destRow
             = std::max(buffInfo.srWindow.Top, buffInfo.dwCursorPosition.Y -
            jump);*/
-        auto row = buffInfo.dwCursorPosition.Y - jump;
+        short row = buffInfo.dwCursorPosition.Y - jump;
         short destRow
           = buffInfo.srWindow.Top >= row ? buffInfo.srWindow.Top : row;
         SetConsoleCursorPosition(consoleHandle,
@@ -1625,7 +1625,7 @@ void TermDb::_emulate_cnl(const short jump = 1) const noexcept
         /*short destRow
             = std::min(buffInfo.srWindow.Bottom, buffInfo.dwCursorPosition.Y +
            jump);*/
-        auto row = buffInfo.dwCursorPosition.Y + jump;
+        short row = buffInfo.dwCursorPosition.Y + jump;
         short destRow
           = buffInfo.srWindow.Bottom <= row ? buffInfo.srWindow.Bottom : row;
         SetConsoleCursorPosition(consoleHandle,
