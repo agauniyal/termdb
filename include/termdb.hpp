@@ -1430,7 +1430,7 @@ private:
 public:
     TermDb() = default;
 
-    TermDb(const std::string &, std::string) = delete;
+    TermDb(const std::string &, std::string) {}
     bool parse(const std::string, std::string);
 
     explicit operator bool() const noexcept { return isValidState; }
