@@ -2,7 +2,7 @@
 #include <iostream>
 #include <sstream>
 
-#if defined(OS_WIN)
+#if defined(WIN32) || defined(_WIN32) || defined(_WIN64)
 namespace tdb{
 constexpr const auto numCapBool = 0;
 constexpr const auto numCapNum = 0;
