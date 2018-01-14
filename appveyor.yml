@@ -43,13 +43,15 @@ install:
   - ps: wget $GLIB_URL -OutFile glib.zip
   - ps: wget $GETTEXT_URL -OutFile gettext.zip
   - ps: wget $PKG_CONFIG_URL -OutFile pkg_config.zip
-  
+  - ps: wget 'https://github.com/OpenCppCoverage/OpenCppCoverage/releases/download/release-0.9.6.1/OpenCppCoverageSetup-x64-0.9.6.1.exe' -OutFile coverage_setup.exe
+  - cmd: coverage_setup.exe /VERYSILENT
+
   - cmd: 7z x glib.zip -oC:\glib > nul
   - cmd: 7z x gettext.zip -oC:\gettext > nul
   - cmd: 7z x pkg_config.zip -oC:\pkg_config > nul
 
-  - cmd: set PATH=C:\glib\bin\;C:\gettext\bin\;C:\pkg_config\bin\;%PATH%
-  # - cmd: ls ./
+  - cmd: set OPENCPPPATH="C:\\Program Files\\OpenCppCoverage"
+  - cmd: set PATH=C:\glib\bin\;C:\gettext\bin\;C:\pkg_config\bin\;%OPENCPPPATH%;%PATH%
   - cmd: python -m pip install meson conan
 
   - cmd: pkg-config --version
@@ -64,7 +66,7 @@ install:
   - cmd: conan remote add bincrafters https://api.bintray.com/conan/bincrafters/public-conan
   - cmd: conan remote add rang https://api.bintray.com/conan/agauniyal/rang
   - cmd: conan remote add nonstd-lite https://api.bintray.com/conan/agauniyal/nonstd-lite
-  
+
 
 build_script:
   - cmd: echo Building on %arch% with %compiler%
@@ -78,6 +80,11 @@ build_script:
   - cmd: meson configure -Dbuildtype=debug
   - cmd: meson configure -Dwarning_level=3
   - cmd: ninja
-  - cmd: cd ..
+  - ps: ls 
+  - cmd: cd test
+  - cmd: mainTest.exe
+  - cmd: bench.exe
+  - cmd: stressTest.exe
+  # - cmd: cd ..
   # - cmd: PATH=%cd%;%MESON_PYTHON_PATH%;%PATH%; && python meson.build --backend=ninja builddir
   # - cmd: PATH=%cd%;%MESON_PYTHON_PATH%;%PATH%; && ninja -C builddir
