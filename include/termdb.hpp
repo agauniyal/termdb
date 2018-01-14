@@ -1430,7 +1430,7 @@ private:
 public:
     TermDb() = default;
 
-    TermDb(const std::string &, std::string) {}
+    TermDb(const std::string &, std::string="") {}
     bool parse(const std::string, std::string);
 
     explicit operator bool() const noexcept { return isValidState; }
@@ -1441,7 +1441,7 @@ public:
 
     std::string parser(const std::string &s, param p1, param p2, param p3,
                        param p4, param p5, param p6, param p7, param p8,
-                       param p9) const = delete;
+                       param p9) const {return "";}
 
     std::string get(tdb::str _s, param p1 = 0l, param p2 = 0l, param p3 = 0l,
                     param p4 = 0l, param p5 = 0l, param p6 = 0l, param p7 = 0l,
