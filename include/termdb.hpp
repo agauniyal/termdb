@@ -1623,21 +1623,28 @@ std::error_code TermDb::loadDB(const std::string _name, std::string _path)
 
 bool TermDb::parse(const std::string _name = "", std::string _path = "")
 {
-    consoleHandle = GetStdHandle(STD_OUTPUT_HANDLE);
-    if (consoleHandle == INVALID_HANDLE_VALUE) {
-        isValidState = false;
-        return isValidState;
-    } else {
-        isValidState = true;
-    }
 
-    isLessThanWin10 = !IsWindows10OrGreater();
-    name            = "cmd.exe";
-    if (!isLessThanWin10) {
-        DWORD dwMode = 0;
-        GetConsoleMode(consoleHandle, &dwMode);
-        dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
-        SetConsoleMode(consoleHandle, dwMode);
+    name.clear();
+    booleans.reset();
+    numbers.fill(std::numeric_limits<uint16_t>::max());
+    stringOffset.clear();
+    stringTable.clear();
+    
+    if (!_path.empty()){
+        const auto error = loadDB(_name, _path);
+        isValidState     = error ? false : true;
+    } else {
+        consoleHandle = GetStdHandle(STD_OUTPUT_HANDLE);
+        isValidState = consoleHandle == INVALID_HANDLE_VALUE ? false : true;
+
+        isLessThanWin10 = !IsWindows10OrGreater();
+        name            = "cmd.exe";
+        if (!isLessThanWin10) {
+            DWORD dwMode = 0;
+            GetConsoleMode(consoleHandle, &dwMode);
+            dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+            SetConsoleMode(consoleHandle, dwMode);
+        }
     }
     return isValidState;
 }

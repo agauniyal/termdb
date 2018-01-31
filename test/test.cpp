@@ -33,7 +33,8 @@ TEST_CASE("Failure to construct")
 TEST_CASE("Successfull parsing")
 {
     TermDb parser;
-    const auto result = parser.parse("xterm", "terminfo/");
+    // const auto result = parser.parse("xterm", "terminfo/");
+    const auto result = parser.parse("xterm", "terminfo\\");
 
     REQUIRE(result);
     REQUIRE(parser);
@@ -54,7 +55,8 @@ TEST_CASE("Failure before parsing")
 TEST_CASE("No Magic Bytes")
 {
     TermDb parser;
-    const auto result = parser.parse("corrupt-magic", "terminfo/");
+    // const auto result = parser.parse("corrupt-magic", "terminfo/");
+    const auto result = parser.parse("corrupt-magic", "terminfo\\");
 
     REQUIRE_FALSE(result);
     REQUIRE_FALSE(parser);
@@ -64,7 +66,8 @@ TEST_CASE("No Magic Bytes")
 TEST_CASE("Size0 Error")
 {
     TermDb parser;
-    const auto result = parser.parse("corrupt-size", "terminfo/");
+    // const auto result = parser.parse("corrupt-size", "terminfo/");
+    const auto result = parser.parse("corrupt-size", "terminfo\\");
 
     REQUIRE_FALSE(result);
     REQUIRE_FALSE(parser);
@@ -74,7 +77,8 @@ TEST_CASE("Size0 Error")
 TEST_CASE("Corrupted Database")
 {
     TermDb parser;
-    const auto result = parser.parse("corrupted", "terminfo/");
+    // const auto result = parser.parse("corrupted", "terminfo/");
+    const auto result = parser.parse("corrupted", "terminfo\\");
 
     REQUIRE_FALSE(result);
     REQUIRE_FALSE(parser);
@@ -84,11 +88,13 @@ TEST_CASE("Corrupted Database")
 TEST_CASE("DataResets successfully")
 {
     TermDb parser;
-    auto result = parser.parse("xterm", "terminfo/");
+    // auto result = parser.parse("xterm", "terminfo/");
+    auto result = parser.parse("xterm", "terminfo\\");
     REQUIRE(result);
 
     auto name = parser.getName();
-    result    = parser.parse("adm3a", "terminfo/");
+    // result    = parser.parse("adm3a", "terminfo/");
+    result    = parser.parse("adm3a", "terminfo\\");
     REQUIRE(result);
 
     REQUIRE_FALSE(parser.getName() == name);
@@ -108,7 +114,8 @@ TEST_CASE("Wrong Arguments")
 
 TEST_CASE("Name")
 {
-    TermDb parser("adm3a", "terminfo/");
+    // TermDb parser("adm3a", "terminfo/");
+    TermDb parser("adm3a", "terminfo\\");
     auto name = parser.getName();
 
     REQUIRE(name == "adm3a|lsi adm3a");
@@ -117,7 +124,8 @@ TEST_CASE("Name")
 
 TEST_CASE("Booleans")
 {
-    TermDb parser("adm3a", "terminfo/");
+    // TermDb parser("adm3a", "terminfo/");
+    TermDb parser("adm3a", "terminfo\\");
     std::bitset<44> arr;
 
     for (auto i = 0; i < 44; ++i) {
@@ -132,7 +140,8 @@ TEST_CASE("Booleans")
 
 TEST_CASE("Numbers")
 {
-    TermDb parser("adm3a", "terminfo/");
+    // TermDb parser("adm3a", "terminfo/");
+    TermDb parser("adm3a", "terminfo\\");
 
     std::vector<uint16_t> hardNums(39, 65535);
     // hardocoded for adm3a
