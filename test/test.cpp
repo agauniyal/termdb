@@ -7,10 +7,16 @@ using namespace tdb;
 
 TEST_CASE("Successful construction")
 {
-    TermDb parser("xterm", "terminfo/");
+    // #if defined(OS_WIN)
+
+
+    // #elif defined(OS_LINUX) || defined(OS_MAC)
+
+    TermDb parser("xterm", "terminfo\\");
 
     REQUIRE(parser);
     REQUIRE(parser.getName().size() != 0);
+    // #endif
 }
 
 

@@ -3,13 +3,13 @@
 #include <sstream>
 #include <chrono>
 
-#if defined(WIN32) || defined(_WIN32) || defined(_WIN64)
-namespace tdb {
-constexpr const auto numCapBool = 0;
-constexpr const auto numCapNum  = 0;
-constexpr const auto numCapStr  = 0;
-}  // namespace tdb
-#endif
+// #if defined(WIN32) || defined(_WIN32) || defined(_WIN64)
+// namespace tdb {
+// constexpr const auto numCapBool = 0;
+// constexpr const auto numCapNum  = 0;
+// constexpr const auto numCapStr  = 0;
+// }  // namespace tdb
+// #endif
 
 
 using namespace tdb;

@@ -73,15 +73,19 @@ build_script:
   - cmd: ninja --version
   - cmd: meson --version
   - cmd: mkdir build && cd build
-  - cmd: ls ..
+  - cmd: ls
   - cmd: conan install ..
   - cmd: conan build ..
   - cmd: ninja extract_data
   - cmd: meson configure -Dbuildtype=debug
   - cmd: meson configure -Dwarning_level=3
+  - cmd: pwd
+  - cmd: ls
   - cmd: ninja
-  - ps: ls 
+  - cmd: pwd
+  - cmd: ls
   - cmd: cd test
+  - ps: ls
   - cmd: mainTest.exe
   - cmd: bench.exe
   - cmd: stressTest.exe

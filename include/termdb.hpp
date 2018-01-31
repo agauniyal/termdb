@@ -13,7 +13,7 @@
 
 #include "optional.hpp"
 #include "variant.hpp"
-
+#include <iostream>
 #include <algorithm>
 #include <bitset>
 #include <fstream>
@@ -56,12 +56,13 @@ namespace tdb {
 
 constexpr const auto DPATH = "/usr/share/terminfo/";
 
+#endif
+
 // sizes from '/usr/include/term.h'
 constexpr const auto numCapBool = 44;
 constexpr const auto numCapNum  = 39;
 constexpr const auto numCapStr  = 414;
 
-#endif
 
 // param types
 using param = mpark::variant<long, std::string>;
@@ -1408,11 +1409,17 @@ std::string TermDb::parser(const std::string &s, param p1, param p2, param p3,
 
 class TermDb {
 private:
+    std::bitset<numCapBool> booleans{};
+    std::array<uint16_t, numCapNum> numbers{};
+    std::vector<uint16_t> stringOffset;
+    std::vector<char> stringTable;
+
     std::string name;
     bool isValidState    = false;
     bool isLessThanWin10 = false;
     HANDLE consoleHandle = nullptr;
 
+    std::error_code loadDB(const std::string, std::string);
     void _emulate_clear() const noexcept;
     void _emulate_cup(const short) const noexcept;
     void _emulate_cud(const short) const noexcept;
@@ -1430,7 +1437,26 @@ private:
 public:
     TermDb() = default;
 
-    TermDb(const std::string &, std::string="") {}
+    TermDb(const std::string &_name, std::string _path = ""){
+        // take the terminal name and path 
+        // if path is empty then fallback to cmd
+        // else try to load the given terminal's db from given path
+        if (_path.empty()){
+            name = "cmd.exe";
+            // load other things for cmd
+            // bitset booleans by default false
+            // numbers std::array default filled with zeros ?
+
+        } else {
+            const auto error = loadDB(_name, _path);
+            if (error) {
+                throw error;
+            } else {
+                isValidState = true;
+            }   
+        }
+    }
+
     bool parse(const std::string, std::string);
 
     explicit operator bool() const noexcept { return isValidState; }
@@ -1457,6 +1483,143 @@ public:
         }
     }
 };
+
+std::error_code TermDb::loadDB(const std::string _name, std::string _path)
+{
+    std::cout << "_path is:" << _path << '\n';
+    const auto hashCharacter = [](unsigned char c) {
+        if (c < 10) {
+            return c + '0';
+        } else {
+            return (c - 10) + 'a';
+        }
+    };
+
+    std::error_code ec = tdb::ParseError::Success;
+    if (_name.empty() || _path.empty()) {
+        ec = tdb::ParseError::ReadError;
+        return ec;
+    }
+
+
+    std::string tryPath = _path;
+    tryPath = std::string("..\\").append(tryPath.append(_name, 0, 1).append(1, '\\').append(_name));
+    std::cout << "tryPath is:" << tryPath << '\n';
+    std::ifstream db(tryPath.c_str(), std::ios::binary | std::ios::ate);
+    if (!db) {
+        // try using hash value
+        char hash[2];
+        unsigned char firstchar = _name[0];
+
+        hash[0] = hashCharacter((firstchar & 0xF0) >> 4);
+        hash[1] = hashCharacter(firstchar & 0x0F);
+        _path.append(&hash[0], 2).append(1, '\\').append(_name);
+        std::cout << "_path is:" << _path << '\n';
+        db.clear();
+        db.open(_path, std::ios::binary | std::ios::ate);
+
+        if (!db) {
+            ec = tdb::ParseError::ReadError;
+            return ec;
+        }
+    }
+
+    const int size = db.tellg();
+    if (size == 0) {
+        ec = tdb::ParseError::BadDatabase;
+        return ec;
+    }
+
+
+    db.seekg(0, std::ios::beg);
+    std::vector<uint8_t> buffer(size);
+    db.read(reinterpret_cast<char *>(buffer.data()), size);
+    db.close();
+
+    if (db.fail()) {
+        ec = tdb::ParseError::ReadError;
+        return ec;
+    }
+
+
+    // sanitize if no at-the-end null byte present
+    buffer.push_back('\0');
+
+    // header contains a constant magic number
+    const auto magic_byte = buffer[0] | (buffer[1] << 8);
+    if (magic_byte != 0432) {
+        ec = tdb::ParseError::MagicByteError;
+        return ec;
+    }
+
+
+    /* size list contains size/numbers of -
+    - name [0]
+    - booleans [1]
+    - numbers [2]
+    - offsets [3]
+    - stringTable [4]
+    */
+    uint16_t sList[5] = { 0 };
+    for (auto i = 2, j = 0; i < 12; i += 2, ++j) {
+        sList[j] = buffer[i] | (buffer[i + 1] << 8);
+    }
+
+
+    // check for malformed databases
+    const std::size_t minBytes
+      = 12 + sList[0] + sList[1] + ((sList[2] + sList[3]) * 2) + sList[4];
+    if (buffer.size() <= minBytes) {
+        ec = tdb::ParseError::BadDatabase;
+        return ec;
+    }
+
+    // parse name of terms
+    name.append(buffer.begin() + 12, buffer.begin() + 11 + sList[0]);
+
+    // parse boolean values
+    int cursor = 12 + sList[0];
+    for (auto i = cursor; i < cursor + sList[1]; ++i) {
+        if (buffer[i]) {
+            booleans.set(i - cursor);
+        }
+    }
+    cursor += sList[1];
+
+
+    /*
+    Between the boolean section and the number section, a null
+    byte will be inserted, if necessary, to ensure that the
+    number section begins on an even byte (this is a relic of
+    the PDP-11's word-addressed architecture, originally
+    designed in to avoid IOT traps induced by addressing a
+    word on an odd byte boundary). All short integers are
+    aligned on a short word boundary.
+    */
+    cursor += cursor % 2;
+
+
+    // parse numbers values
+    for (auto i = cursor, j = 0; j < sList[2]; i += 2, ++j) {
+        numbers[j] = buffer[i] | (buffer[i + 1] << 8);
+    }
+    cursor += sList[2] * 2;
+
+
+    // parse stringOffset values
+    stringOffset.resize(sList[3], 0);
+    for (auto i = cursor, j = 0; j < sList[3]; i += 2, ++j) {
+        stringOffset[j] = buffer[i] | (buffer[i + 1] << 8);
+    }
+    cursor += sList[3] * 2;
+
+
+    // move rest of the buffer to string table
+    std::move(buffer.begin() + cursor, buffer.end(),
+              std::inserter(stringTable, stringTable.begin()));
+
+    return ec;
+}
 
 bool TermDb::parse(const std::string _name = "", std::string _path = "")
 {
