@@ -7,23 +7,18 @@ using namespace tdb;
 
 TEST_CASE("Successful construction")
 {
-    // #if defined(OS_WIN)
-
-
-    // #elif defined(OS_LINUX) || defined(OS_MAC)
-
-    TermDb parser("xterm", "terminfo\\");
+    // TermDb<Exceptions::ON> parser("xterm", "terminfo/");
+    TermDb<Exceptions::ON> parser("xterm", "terminfo\\");
 
     REQUIRE(parser);
     REQUIRE(parser.getName().size() != 0);
-    // #endif
 }
 
 
 TEST_CASE("Failure to construct")
 {
     try {
-        TermDb parser("NON_EXISTENT_TERM_FOR_DEMO");
+        TermDb<Exceptions::ON> parser("NON_EXISTENT_TERM_FOR_DEMO");
     } catch (std::error_code &e) {
         REQUIRE(e == ParseError::ReadError);
     }
@@ -32,7 +27,7 @@ TEST_CASE("Failure to construct")
 
 TEST_CASE("Successfull parsing")
 {
-    TermDb parser;
+    TermDb<Exceptions::OFF> parser;
     // const auto result = parser.parse("xterm", "terminfo/");
     const auto result = parser.parse("xterm", "terminfo\\");
 
@@ -43,7 +38,7 @@ TEST_CASE("Successfull parsing")
 
 TEST_CASE("Failure before parsing")
 {
-    TermDb parser;
+    TermDb<Exceptions::OFF> parser;
     const auto result = parser.parse("NON_EXISTENT_TERM_FOR_DEMO");
 
     REQUIRE_FALSE(result);
@@ -54,7 +49,7 @@ TEST_CASE("Failure before parsing")
 
 TEST_CASE("No Magic Bytes")
 {
-    TermDb parser;
+    TermDb<Exceptions::OFF> parser;
     // const auto result = parser.parse("corrupt-magic", "terminfo/");
     const auto result = parser.parse("corrupt-magic", "terminfo\\");
 
@@ -65,7 +60,7 @@ TEST_CASE("No Magic Bytes")
 
 TEST_CASE("Size0 Error")
 {
-    TermDb parser;
+    TermDb<Exceptions::OFF> parser;
     // const auto result = parser.parse("corrupt-size", "terminfo/");
     const auto result = parser.parse("corrupt-size", "terminfo\\");
 
@@ -76,7 +71,7 @@ TEST_CASE("Size0 Error")
 
 TEST_CASE("Corrupted Database")
 {
-    TermDb parser;
+    TermDb<Exceptions::OFF> parser;
     // const auto result = parser.parse("corrupted", "terminfo/");
     const auto result = parser.parse("corrupted", "terminfo\\");
 
@@ -87,7 +82,7 @@ TEST_CASE("Corrupted Database")
 
 TEST_CASE("DataResets successfully")
 {
-    TermDb parser;
+    TermDb<Exceptions::OFF> parser;
     // auto result = parser.parse("xterm", "terminfo/");
     auto result = parser.parse("xterm", "terminfo\\");
     REQUIRE(result);
@@ -103,7 +98,7 @@ TEST_CASE("DataResets successfully")
 
 TEST_CASE("Wrong Arguments")
 {
-    TermDb parser;
+    TermDb<Exceptions::OFF> parser;
     auto result = parser.parse("");
     REQUIRE_FALSE(result);
 
@@ -114,8 +109,8 @@ TEST_CASE("Wrong Arguments")
 
 TEST_CASE("Name")
 {
-    // TermDb parser("adm3a", "terminfo/");
-    TermDb parser("adm3a", "terminfo\\");
+    // TermDb<Exceptions::ON> parser("adm3a", "terminfo/");
+    TermDb<Exceptions::ON> parser("adm3a", "terminfo\\");
     auto name = parser.getName();
 
     REQUIRE(name == "adm3a|lsi adm3a");
@@ -124,8 +119,8 @@ TEST_CASE("Name")
 
 TEST_CASE("Booleans")
 {
-    // TermDb parser("adm3a", "terminfo/");
-    TermDb parser("adm3a", "terminfo\\");
+    // TermDb<Exceptions::ON> parser("adm3a", "terminfo/");
+    TermDb<Exceptions::ON> parser("adm3a", "terminfo\\");
     std::bitset<44> arr;
 
     for (auto i = 0; i < 44; ++i) {
@@ -140,8 +135,8 @@ TEST_CASE("Booleans")
 
 TEST_CASE("Numbers")
 {
-    // TermDb parser("adm3a", "terminfo/");
-    TermDb parser("adm3a", "terminfo\\");
+    // TermDb<Exceptions::ON> parser("adm3a", "terminfo/");
+    TermDb<Exceptions::ON> parser("adm3a", "terminfo\\");
 
     std::vector<uint16_t> hardNums(39, 65535);
     // hardocoded for adm3a

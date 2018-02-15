@@ -3,15 +3,6 @@
 #include <sstream>
 #include <chrono>
 
-// #if defined(WIN32) || defined(_WIN32) || defined(_WIN64)
-// namespace tdb {
-// constexpr const auto numCapBool = 0;
-// constexpr const auto numCapNum  = 0;
-// constexpr const auto numCapStr  = 0;
-// }  // namespace tdb
-// #endif
-
-
 using namespace tdb;
 using namespace std;
 
@@ -29,7 +20,7 @@ struct measure {
 };
 
 
-void runParser(const vector<TermDb> &parsers)
+void runParser(const vector<TermDb<Exceptions::ON>> &parsers)
 {
     ostringstream buffer;
     for (auto &parser : parsers) {
@@ -52,7 +43,8 @@ void runParser(const vector<TermDb> &parsers)
 
 int main()
 {
-    ifstream names("stressTestTerms.txt");
+    // ifstream names("stressTestTerms.txt");
+    ifstream names("..\\stressTestTerms.txt");
     if (!names) {
         return -1;
     }
@@ -64,16 +56,18 @@ int main()
     while (getline(names, name)) {
         nameList.emplace_back(name);
     }
-
-    vector<TermDb> parsers;
+    
+    vector<TermDb<Exceptions::ON>> parsers;
     parsers.reserve(nameList.size());
     for (auto &term : nameList) {
         try {
-            parsers.emplace_back(term, "mirror/");
+            // parsers.emplace_back(term, "mirror/");
+             parsers.emplace_back(term, "mirror\\");
         } catch (error_code &e) {
             cerr << '\n' << e << ": " << e.message();
         }
     }
 
     cout << measure<>::execution(runParser, parsers) << " microseconds" << endl;
+    return 0;
 }

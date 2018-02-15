@@ -147,9 +147,12 @@ before_script:
   - cd ..
 
 script:
-  - cd release && ./test/mainTest && ./test/stressTest && ./test/bench && cd ..
-  - cd debug && ./test/mainTest && ./test/stressTest && ./test/bench && cd ..
-  - cd release-sanitize && ./test/mainTest && ./test/stressTest && ./test/bench && cd ..
+  - cd release && ./test/mainTest && ./test/stressTest && ./test/bench
+  - cd ..
+  - cd debug && ./test/mainTest && ./test/stressTest && ./test/bench
+  - cd ..
+  - cd release-sanitize && ./test/mainTest && ./test/stressTest && ./test/bench
+  - cd ..
   - cd debug
 
 after_success:

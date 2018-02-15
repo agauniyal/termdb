@@ -52,7 +52,7 @@ install:
 
   - cmd: set OPENCPPPATH="C:\\Program Files\\OpenCppCoverage"
   - cmd: set PATH=C:\glib\bin\;C:\gettext\bin\;C:\pkg_config\bin\;%OPENCPPPATH%;%PATH%
-  - cmd: python -m pip install meson conan
+  - cmd: python -m pip install meson conan codecov
 
   - cmd: pkg-config --version
   - cmd: ninja --version
@@ -89,6 +89,9 @@ build_script:
   - cmd: mainTest.exe
   - cmd: bench.exe
   - cmd: stressTest.exe
-  # - cmd: cd ..
-  # - cmd: PATH=%cd%;%MESON_PYTHON_PATH%;%PATH%; && python meson.build --backend=ninja builddir
-  # - cmd: PATH=%cd%;%MESON_PYTHON_PATH%;%PATH%; && ninja -C builddir
+  - cmd: OpenCppCoverage --sources C:\projects\termdb --export_type=binary:mainTestReport.bin -- mainTest.exe
+  - cmd: OpenCppCoverage --sources C:\projects\termdb --export_type=binary:benchTestReport.bin -- bench.exe
+  - cmd: OpenCppCoverage --sources C:\projects\termdb --export_type=binary:stressTestReport.bin -- stressTest.exe
+  - cmd: OpenCppCoverage --sources C:\projects\termdb --export_type=cobertura:overallReport.xml --input_coverage=mainTestReport.bin --input_coverage=benchTestReport.bin --input_coverage=stressTestReport.bin
+  - cmd: codecov --root ../.. --no-color --disable gcov -f overallReport.xml
+

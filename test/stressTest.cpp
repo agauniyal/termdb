@@ -2,21 +2,13 @@
 #include <iostream>
 #include <sstream>
 
-// #if defined(WIN32) || defined(_WIN32) || defined(_WIN64)
-// namespace tdb{
-// constexpr const auto numCapBool = 0;
-// constexpr const auto numCapNum = 0;
-// constexpr const auto numCapStr = 0;
-// }
-// #endif
-
-
 int main()
 {
     using namespace tdb;
     using namespace std;
 
-    ifstream names("stressTestTerms.txt");
+    // ifstream names("stressTestTerms.txt");
+    ifstream names("..\\stressTestTerms.txt");
     if (!names) {
         return -1;
     }
@@ -30,10 +22,11 @@ int main()
         nameList.emplace_back(name);
     }
 
-    TermDb parser;
+    TermDb<Exceptions::OFF> parser;
     ostringstream buffer;
     for (auto &term : nameList) {
-        parser.parse(term, "mirror/");
+        // parser.parse(term, "mirror/");
+        parser.parse(term, "mirror\\");
         string termName(parser.getName());
 
         for (auto i = 0; i < tdb::numCapBool; ++i) {
@@ -62,4 +55,5 @@ int main()
     } else {
         return -1;
     }
+    return 0;
 }
