@@ -7,8 +7,12 @@ int main()
     using namespace tdb;
     using namespace std;
 
-    // ifstream names("stressTestTerms.txt");
-    ifstream names("..\\stressTestTerms.txt");
+    #if defined(__unix__) || defined(__unix) || defined(__linux__) || defined(__APPLE__) || defined(__MACH__)
+        ifstream names("stressTestTerms.txt");
+    #elif defined(WIN32) || defined(_WIN32) || defined(_WIN64)
+        ifstream names("..\\stressTestTerms.txt");
+    #endif
+    
     if (!names) {
         return -1;
     }
@@ -25,8 +29,12 @@ int main()
     TermDb<Exceptions::OFF> parser;
     ostringstream buffer;
     for (auto &term : nameList) {
-        // parser.parse(term, "mirror/");
-        parser.parse(term, "mirror\\");
+        #if defined(__unix__) || defined(__unix) || defined(__linux__) || defined(__APPLE__) || defined(__MACH__)
+            parser.parse(term, "mirror/");
+        #elif defined(WIN32) || defined(_WIN32) || defined(_WIN64)
+            parser.parse(term, "..\\mirror\\");
+        #endif
+
         string termName(parser.getName());
 
         for (auto i = 0; i < tdb::numCapBool; ++i) {

@@ -43,8 +43,12 @@ void runParser(const vector<TermDb<Exceptions::ON>> &parsers)
 
 int main()
 {
-    // ifstream names("stressTestTerms.txt");
-    ifstream names("..\\stressTestTerms.txt");
+    #if defined(__unix__) || defined(__unix) || defined(__linux__) || defined(__APPLE__) || defined(__MACH__)
+        ifstream names("stressTestTerms.txt");
+    #elif defined(WIN32) || defined(_WIN32) || defined(_WIN64)
+        ifstream names("..\\stressTestTerms.txt");
+    #endif
+
     if (!names) {
         return -1;
     }
@@ -61,8 +65,12 @@ int main()
     parsers.reserve(nameList.size());
     for (auto &term : nameList) {
         try {
-            // parsers.emplace_back(term, "mirror/");
-             parsers.emplace_back(term, "mirror\\");
+            #if defined(__unix__) || defined(__unix) || defined(__linux__) || defined(__APPLE__) || defined(__MACH__)
+                parsers.emplace_back(term, "mirror/");
+            #elif defined(WIN32) || defined(_WIN32) || defined(_WIN64)
+                 parsers.emplace_back(term, "..\\mirror\\");
+            #endif
+
         } catch (error_code &e) {
             cerr << '\n' << e << ": " << e.message();
         }

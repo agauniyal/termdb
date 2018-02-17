@@ -13,7 +13,6 @@
 
 #include "optional.hpp"
 #include "variant.hpp"
-// #include <iostream>
 #include <algorithm>
 #include <bitset>
 #include <fstream>
@@ -738,7 +737,6 @@ namespace tdb {
     template<Exceptions e>
     std::error_code TermDb<e>::loadDB(const std::string _name, std::string _path)
     {
-        // std::cout << "_path is:" << _path << '\n';
         const auto hashCharacter = [](unsigned char c) {
             if (c < 10) {
                 return c + '0';
@@ -755,13 +753,15 @@ namespace tdb {
 
 
         std::string tryPath = _path;
+        char separator;
         #if defined(OS_LINUX) || defined(OS_MAC)
-            tryPath.append(_name, 0, 1).append(1, '/').append(_name);
+            separator = '/';
         #elif defined(OS_WIN)
-            tryPath = std::string("..\\").append(tryPath.append(_name, 0, 1).append(1, '\\').append(_name));
+            separator = '\\';
         #endif
-        
-        // std::cout << "tryPath is:" << tryPath << '\n';
+
+        tryPath.append(_name, 0, 1).append(1, separator).append(_name);
+
         std::ifstream db(tryPath.c_str(), std::ios::binary | std::ios::ate);
         if (!db) {
             // try using hash value
@@ -770,13 +770,8 @@ namespace tdb {
 
             hash[0] = hashCharacter((firstchar & 0xF0) >> 4);
             hash[1] = hashCharacter(firstchar & 0x0F);
-            #if defined(OS_LINUX) || defined(OS_MAC)
-                _path.append(&hash[0], 2).append(1, '/').append(_name);
-            #elif defined(OS_WIN)
-                _path.append(&hash[0], 2).append(1, '\\').append(_name);
-            #endif
+            _path.append(&hash[0], 2).append(1, separator).append(_name);
 
-            // std::cout << "_path is:" << _path << '\n';
             db.clear();
             db.open(_path, std::ios::binary | std::ios::ate);
 
