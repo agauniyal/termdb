@@ -1,8 +1,7 @@
 dist: trusty
-sudo: false
+sudo: true
 group: travis_latest
 language: c++
-cache: ccache
 
 env:
   global:

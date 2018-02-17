@@ -2,17 +2,22 @@
 #include <iostream>
 #include <sstream>
 
+#if defined(__unix__) || defined(__unix) || defined(__linux__)                 \
+  || defined(__APPLE__) || defined(__MACH__)
+constexpr auto STPATH     = "stressTestTerms.txt";
+constexpr auto MIRRORPATH = "mirror/";
+#elif defined(WIN32) || defined(_WIN32) || defined(_WIN64)
+constexpr auto STPATH     = "..\\stressTestTerms.txt";
+constexpr auto MIRRORPATH = "..\\mirror\\";
+#endif
+
 int main()
 {
     using namespace tdb;
     using namespace std;
 
-    #if defined(__unix__) || defined(__unix) || defined(__linux__) || defined(__APPLE__) || defined(__MACH__)
-        ifstream names("stressTestTerms.txt");
-    #elif defined(WIN32) || defined(_WIN32) || defined(_WIN64)
-        ifstream names("..\\stressTestTerms.txt");
-    #endif
-    
+    ifstream names(STPATH);
+
     if (!names) {
         return -1;
     }
@@ -29,13 +34,10 @@ int main()
     TermDb<Exceptions::OFF> parser;
     ostringstream buffer;
     for (auto &term : nameList) {
-        #if defined(__unix__) || defined(__unix) || defined(__linux__) || defined(__APPLE__) || defined(__MACH__)
-            parser.parse(term, "mirror/");
-        #elif defined(WIN32) || defined(_WIN32) || defined(_WIN64)
-            parser.parse(term, "..\\mirror\\");
-        #endif
+        parser.parse(term, MIRRORPATH);
 
         string termName(parser.getName());
+        buffer << termName << '\n';
 
         for (auto i = 0; i < tdb::numCapBool; ++i) {
             const auto b = parser.get(static_cast<bin>(i));
@@ -50,18 +52,16 @@ int main()
         buffer << "\n";
 
         for (auto i = 0; i < tdb::numCapStr; ++i) {
-            const auto s = parser.get(static_cast<str>(i), 1, 1, 1, 1,
-                                               1, 1, 1, 1, 1);
+            const auto s
+              = parser.get(static_cast<str>(i), 1, 1, 1, 1, 1, 1, 1, 1, 1);
             buffer << s << " ";
         }
         buffer << "\n\n";
     }
 
     ofstream output("output.txt");
-    if (output) {
-        output << buffer.str();
-    } else {
+    if (!output) {
         return -1;
     }
-    return 0;
+    output << buffer.str();
 }

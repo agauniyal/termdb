@@ -4,11 +4,11 @@
 #include "termdb.hpp"
 
 #if defined(__unix__) || defined(__unix) || defined(__linux__)
-    std::string testPath = "terminfo/";
+std::string testPath = "terminfo/";
 #elif defined(WIN32) || defined(_WIN32) || defined(_WIN64)
-    std::string testPath = "..\\terminfo\\";
+std::string testPath = "..\\terminfo\\";
 #elif defined(__APPLE__) || defined(__MACH__)
-    std::string testPath = "terminfo/";
+std::string testPath = "terminfo/";
 #else
 #error Unknown Platform
 #endif

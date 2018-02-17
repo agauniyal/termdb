@@ -3,6 +3,15 @@
 #include <sstream>
 #include <chrono>
 
+#if defined(__unix__) || defined(__unix) || defined(__linux__)                 \
+  || defined(__APPLE__) || defined(__MACH__)
+constexpr auto STPATH     = "stressTestTerms.txt";
+constexpr auto MIRRORPATH = "mirror/";
+#elif defined(WIN32) || defined(_WIN32) || defined(_WIN64)
+constexpr auto STPATH     = "..\\stressTestTerms.txt";
+constexpr auto MIRRORPATH = "..\\mirror\\";
+#endif
+
 using namespace tdb;
 using namespace std;
 
@@ -43,11 +52,7 @@ void runParser(const vector<TermDb<Exceptions::ON>> &parsers)
 
 int main()
 {
-    #if defined(__unix__) || defined(__unix) || defined(__linux__) || defined(__APPLE__) || defined(__MACH__)
-        ifstream names("stressTestTerms.txt");
-    #elif defined(WIN32) || defined(_WIN32) || defined(_WIN64)
-        ifstream names("..\\stressTestTerms.txt");
-    #endif
+    ifstream names(STPATH);
 
     if (!names) {
         return -1;
@@ -60,22 +65,16 @@ int main()
     while (getline(names, name)) {
         nameList.emplace_back(name);
     }
-    
+
     vector<TermDb<Exceptions::ON>> parsers;
     parsers.reserve(nameList.size());
     for (auto &term : nameList) {
         try {
-            #if defined(__unix__) || defined(__unix) || defined(__linux__) || defined(__APPLE__) || defined(__MACH__)
-                parsers.emplace_back(term, "mirror/");
-            #elif defined(WIN32) || defined(_WIN32) || defined(_WIN64)
-                 parsers.emplace_back(term, "..\\mirror\\");
-            #endif
-
+            parsers.emplace_back(term, MIRRORPATH);
         } catch (error_code &e) {
             cerr << '\n' << e << ": " << e.message();
         }
     }
 
     cout << measure<>::execution(runParser, parsers) << " microseconds" << endl;
-    return 0;
 }
