@@ -31,10 +31,9 @@ int main()
         nameList.emplace_back(name);
     }
 
-    TermDb<Exceptions::OFF> parser;
     ostringstream buffer;
     for (auto &term : nameList) {
-        parser.parse(term, MIRRORPATH);
+        TermDb<Exceptions::OFF> parser(term, MIRRORPATH);
 
         string termName(parser.getName());
         buffer << termName << '\n';

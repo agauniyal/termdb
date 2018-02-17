@@ -621,6 +621,7 @@ private:
     std::string parser(const std::string &s, param p1, param p2, param p3,
                        param p4, param p5, param p6, param p7, param p8,
                        param p9) const;
+    bool parse(const std::string, std::string = DPATH);
 
 #if defined(OS_WIN)
     bool isLessThanWin10 = false;
@@ -652,10 +653,9 @@ public:
 
     TermDb(const std::string &_name, std::string _path = DPATH);
 
-    explicit operator bool() const noexcept { return isValidState; }
+    explicit operator bool() const noexcept;
     std::string getName() const { return name; }
 
-    bool parse(const std::string, std::string = DPATH);
 
     bool get(tdb::bin _b) const noexcept
     {
@@ -738,6 +738,12 @@ TermDb<Exceptions::ON>::TermDb(const std::string &_name, std::string _path)
     }
 #endif
 }
+
+template<>
+TermDb<Exceptions::OFF>::operator bool() const noexcept { return isValidState; }
+
+template<>
+TermDb<Exceptions::ON>::operator bool() const noexcept = delete;
 
 template <Exceptions E>
 std::error_code TermDb<E>::loadDB(const std::string _name, std::string _path)
