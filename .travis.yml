@@ -121,6 +121,7 @@ before_script:
   - conan install ..
   - conan build ..
   - ninja extract_data
+  - ninja doc_builder
   - meson configure -Dbuildtype=debug
   - meson configure -Dwarning_level=3
   - if [[ "${COMPILER}" == clang++* ]]; then meson configure -Db_sanitize="address,undefined"; fi;
@@ -131,6 +132,7 @@ before_script:
   - conan install ..
   - conan build ..
   - ninja extract_data
+  - ninja doc_builder
   - meson configure -Dbuildtype=release
   - meson configure -Dwarning_level=3
   - if [[ "${COMPILER}" == clang* ]]; then meson configure -Db_sanitize="address,undefined"; fi;
@@ -140,6 +142,7 @@ before_script:
   - conan install ..
   - conan build ..
   - ninja extract_data
+  - ninja doc_builder
   - meson configure -Dbuildtype=release
   - meson configure -Dwarning_level=3
   - ninja

@@ -633,13 +633,7 @@ private:
 #endif
 
 public:
-    TermDb()
-    {
-        // try detecting the terminal from $TERM in linux
-        // and set terminal to cmd in windows
-        // check if exceptions are on then throw in failure else set validstate
-        // to false
-    }
+    TermDb();
 
     TermDb(const std::string &_name, std::string _path = DPATH);
 
@@ -702,9 +696,47 @@ public:
     }
 };
 
+template<>
+TermDb<Exceptions::OFF>::TermDb(){
+#if defined(OS_WIN)
+    name         = "cmd.exe";
+    isValidState = true;
+#elif defined(OS_LINUX) || defined(OS_MAC)
+    const auto terminalToBe = std::getenv("TERM");
+    if (terminalToBe) {
+        const auto error = loadDB(terminalToBe, DPATH);
+        isValidState = error ? false : true;
+    } else {
+        isValidState = false;
+    }
+#endif
+}
+
+template<>
+TermDb<Exceptions::ON>::TermDb(){
+#if defined(OS_WIN)
+    name         = "cmd.exe";
+    isValidState = true;
+#elif defined(OS_LINUX) || defined(OS_MAC)
+    const auto terminalToBe = std::getenv("TERM");
+    if (terminalToBe) {
+        const auto error = loadDB(terminalToBe, DPATH);
+        if (error) {
+            throw error;
+        } else {
+            isValidState = true;
+        }
+    } else {
+        throw;
+    }
+#endif
+}
+
 template <>
 TermDb<Exceptions::OFF>::TermDb(const std::string &_name, std::string _path)
 {
+    const auto error = loadDB(_name, _path);
+    isValidState = error ? false : true;
 }
 
 template <>

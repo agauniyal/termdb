@@ -39,6 +39,7 @@ install:
   - cmd: ninja --version
   - cmd: meson --version
   - cmd: conan --version
+  - cmd: python --version
 
   - cmd: if %compiler%==msvc2015 ( call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" %arch% )
   - cmd: if %compiler%==msvc2017 ( call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvars64.bat")
@@ -52,6 +53,7 @@ build_script:
   - cmd: conan install ..
   - cmd: conan build ..
   - cmd: ninja extract_data
+  - cmd: ninja doc_builder
   - cmd: meson configure -Dbuildtype=debug
   - cmd: meson configure -Dwarning_level=3
   - cmd: ninja
