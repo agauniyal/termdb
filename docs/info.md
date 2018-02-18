@@ -80,8 +80,7 @@ int main()
 
 #### 3.
 ```cpp
-
-
+#include <iostream>
 #include "termdb.hpp"
 
 using namespace std;
@@ -207,7 +206,7 @@ int main(){
 
 		auto clearScreenCode = terminal.get(str::clear_screen);
 		cout << "Clear screen on " << name << " using code: " << clearScreenCode << '\n';
-	} catch {
+	} catch (...) {
 		cout << "Oops!!\n";
 	}
 
