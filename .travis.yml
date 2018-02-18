@@ -29,70 +29,70 @@ matrix:
       compiler: gcc
       addons: &gcc5
         apt:
-          packages: ["g++-5", "python3-pip", "lcov"]
+          packages: ["g++-5", "python3", "python3-pip", "lcov"]
           sources: *apt_sources
 
     - env: COMPILER=g++-6
       compiler: gcc
       addons: &gcc6
         apt:
-          packages: ["g++-6", "python3-pip", "lcov"]
+          packages: ["g++-6", "python3", "python3-pip", "lcov"]
           sources: *apt_sources
 
     - env: COMPILER=g++-7
       compiler: gcc
       addons: &gcc7
         apt:
-          packages: ["g++-7", "python3-pip", "lcov"]
+          packages: ["g++-7", "python3", "python3-pip", "lcov"]
           sources: *apt_sources
 
     - env: COMPILER=clang++-3.5
       compiler: clang
       addons: &clang35
         apt:
-          packages: ["clang-3.5", "g++-7", "python3-pip", "lcov"]
+          packages: ["clang-3.5", "python3", "g++-7", "python3-pip", "lcov"]
           sources: *apt_sources
 
     - env: COMPILER=clang++-3.6
       compiler: clang
       addons: &clang36
         apt:
-          packages: ["clang-3.6", "g++-7", "python3-pip", "lcov"]
+          packages: ["clang-3.6", "python3", "g++-7", "python3-pip", "lcov"]
           sources: *apt_sources
 
     - env: COMPILER=clang++-3.7
       compiler: clang
       addons: &clang37
         apt:
-          packages: ["clang-3.7", "g++-7", "python3-pip", "lcov"]
+          packages: ["clang-3.7", "python3", "g++-7", "python3-pip", "lcov"]
           sources: *apt_sources
 
     - env: COMPILER=clang++-3.8
       compiler: clang
       addons: &clang38
         apt:
-          packages: ["clang-3.8", "g++-7", "python3-pip", "lcov"]
+          packages: ["clang-3.8", "python3", "g++-7", "python3-pip", "lcov"]
           sources: *apt_sources
 
     - env: COMPILER=clang++-3.9
       compiler: clang
       addons: &clang39
         apt:
-          packages: ["clang-3.9", "g++-7", "python3-pip", "lcov"]
+          packages: ["clang-3.9", "python3", "g++-7", "python3-pip", "lcov"]
           sources: *apt_sources
 
     - env: COMPILER=clang++-4.0
       compiler: clang
       addons: &clang40
         apt:
-          packages: ["clang-4.0", "g++-7", "python3-pip", "lcov"]
+          packages: ["clang-4.0", "python3", "g++-7", "python3-pip", "lcov"]
           sources: *apt_sources
 
     - env: COMPILER=clang++-5.0
       compiler: clang
       addons: &clang50
         apt:
-          packages: ["clang-5.0", "g++-7", "python3-pip", "lcov"]
+          packages: ["clang-5.0", "python3", "g++-7", "python3-pip", "lcov"]
           sources: *apt_sources
 
   allow_failures:
@@ -116,6 +116,7 @@ install:
   - export PATH="~/.local/bin:${PATH}"
 
 before_script:
+  - python --version
   - export CXX=$COMPILER
   - mkdir debug && cd debug
   - conan install ..
@@ -132,7 +133,6 @@ before_script:
   - conan install ..
   - conan build ..
   - ninja extract_data
-  - ninja doc_builder
   - meson configure -Dbuildtype=release
   - meson configure -Dwarning_level=3
   - if [[ "${COMPILER}" == clang* ]]; then meson configure -Db_sanitize="address,undefined"; fi;
@@ -142,7 +142,6 @@ before_script:
   - conan install ..
   - conan build ..
   - ninja extract_data
-  - ninja doc_builder
   - meson configure -Dbuildtype=release
   - meson configure -Dwarning_level=3
   - ninja
