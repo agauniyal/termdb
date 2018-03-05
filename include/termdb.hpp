@@ -680,7 +680,6 @@ private:
             // switch(capname){
             //     case tdb::str::clear_screen: actionString = "";
             // }
-
         }
 
         action(const TermDb &_t, str _cap, std::string _s)
@@ -766,6 +765,7 @@ public:
         //     case tdb::str::clear_screen: return { *this, do_clear() };
         //     default: return { *this, "" };
         // }
+        // TODO: should insert string in case of win10
         return { *this, _s, "" };
 #endif
     }
@@ -1595,39 +1595,6 @@ bool TermDb<E>::parse(const std::string _name, std::string _path)
 
     return isValidState;
 }
-
-// #if defined(OS_WIN)
-// template <Exceptions E>
-// void TermDb<E>::_emulate_clear() const noexcept
-// {
-//     CONSOLE_SCREEN_BUFFER_INFO buffInfo;
-//     GetConsoleScreenBufferInfo(consoleHandle, &buffInfo);
-
-//     DWORD totalChars   = buffInfo.dwSize.X * buffInfo.dwSize.Y;
-//     COORD startPos     = { 0, 0 };
-//     DWORD charsWritten = 0;
-
-//     FillConsoleOutputCharacter(consoleHandle, ' ', totalChars, startPos,
-//                                &charsWritten);
-//     FillConsoleOutputAttribute(consoleHandle, buffInfo.wAttributes,
-//     totalChars,
-//                                startPos,
-//                                &charsWritten);  // Resetting attributes
-//     SetConsoleCursorPosition(consoleHandle,
-//                              startPos);  // Position cursor to home
-// }
-
-// template <Exceptions E>
-// std::string TermDb<E>::do_clear() const noexcept
-// {
-//     if (isLessThanWin10) {
-//         _emulate_clear();
-//         return "";
-//     } else {
-//         return "\x1b[2J";
-//     }
-// }
-// #endif
 
 }  // namespace tdb
 
