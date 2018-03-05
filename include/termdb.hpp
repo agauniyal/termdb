@@ -700,6 +700,7 @@ private:
             auto stringToPrint = obj.act();
             os << stringToPrint;
 #endif
+            os.flush();
             return os;
         }
     };
