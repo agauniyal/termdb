@@ -106,6 +106,19 @@ install:
   - wget https://github.com/ninja-build/ninja/releases/download/v1.8.2/ninja-linux.zip && unzip -q ninja-linux.zip -d build-ninja
   - wget https://github.com/danmar/cppcheck/releases/download/1.81/cppcheck-1.81.zip && unzip -q cppcheck-1.81.zip
   - cd cppcheck-1.81/ && make SRCDIR=build CFGDIR=cfg CXXFLAGS="-O1 -DNDEBUG" -j2 && cd ..
+
+  # - curl -L https://github.com/pyenv/pyenv-installer/raw/master/bin/pyenv-installer | bash
+  # - export PATH="`pwd`/.pyenv/bin/:${PATH}"
+  # - pyenv install 3.6.1
+  # - pyenv global 3.6.1
+  - sudo add-apt-repository ppa:fkrull/deadsnakes -y
+  - sudo apt-get update -y
+  - sudo apt-get install -y --allow-unauthenticated python3.6
+  - cd /usr/bin
+  - sudo rm python3
+  - sudo ln -s python3.6 python3
+  - python --version
+  - python3 --version
   - pip3 install --user meson
   - pip3 install --user conan
   - conan remote add bincrafters https://api.bintray.com/conan/bincrafters/public-conan

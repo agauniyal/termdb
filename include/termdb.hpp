@@ -626,11 +626,86 @@ private:
 #if defined(OS_WIN)
     bool isLessThanWin10 = false;
     HANDLE consoleHandle = nullptr;
-
-    void _emulate_clear() const noexcept;
-
-    std::string do_clear() const noexcept;
 #endif
+
+    class action {
+        const TermDb &term;
+        std::string actionString;
+        str capname;
+
+#if defined(OS_WIN)
+        void _emulate_clear(HANDLE consoleHandle) const noexcept
+        {
+            CONSOLE_SCREEN_BUFFER_INFO buffInfo;
+            GetConsoleScreenBufferInfo(consoleHandle, &buffInfo);
+
+            DWORD totalChars   = buffInfo.dwSize.X * buffInfo.dwSize.Y;
+            COORD startPos     = { 0, 0 };
+            DWORD charsWritten = 0;
+
+            FillConsoleOutputCharacter(consoleHandle, ' ', totalChars, startPos,
+                                       &charsWritten);
+            FillConsoleOutputAttribute(consoleHandle, buffInfo.wAttributes,
+                                       totalChars, startPos,
+                                       &charsWritten);  // Resetting attributes
+            SetConsoleCursorPosition(consoleHandle,
+                                     startPos);  // Position cursor to home
+        }
+
+        std::string do_clear(HANDLE consoleHandle) const noexcept
+        {
+            if (term.isLessThanWin10) {
+                _emulate_clear(consoleHandle);
+                return "";
+            } else {
+                return "\x1b[2J";
+            }
+        }
+
+        std::string act() const noexcept
+        {
+            auto consoleHandle = term.consoleHandle;
+            switch (capname) {
+                case tdb::str::clear_screen: return do_clear(consoleHandle);
+                default:
+                    return "";  // TODO: What to return in this case ?
+            }
+        }
+#endif
+
+    public:
+        action(const TermDb &_t, str _cap, const char *_c)
+            : term(_t), capname(_cap), actionString(_c)
+        {
+            // switch(capname){
+            //     case tdb::str::clear_screen: actionString = "";
+            // }
+
+        }
+
+        action(const TermDb &_t, str _cap, std::string _s)
+            : term(_t), capname(_cap), actionString(_s)
+        {
+        }
+
+        std::string get() const noexcept { return actionString; }
+        str name() const noexcept { return capname; }
+
+        template <typename CharT, typename Traits>
+        friend std::basic_ostream<CharT, Traits> &
+        operator<<(std::basic_ostream<CharT, Traits> &os, const action &obj)
+        {
+#if defined(OS_LINUX) || defined(OS_MAC)
+            os << obj.get();
+#elif defined(OS_WIN)
+            auto stringToPrint = obj.act();
+            os << stringToPrint;
+#endif
+            return os;
+        }
+    };
+
+    friend class action;
 
 public:
     TermDb();
@@ -661,10 +736,13 @@ public:
     }
 
 
-    std::string get(tdb::str _s, param p1 = 0l, param p2 = 0l, param p3 = 0l,
-                    param p4 = 0l, param p5 = 0l, param p6 = 0l, param p7 = 0l,
-                    param p8 = 0l, param p9 = 0l) const
+    action get(tdb::str _s, param p1 = 0l, param p2 = 0l, param p3 = 0l,
+               param p4 = 0l, param p5 = 0l, param p6 = 0l, param p7 = 0l,
+               param p8 = 0l, param p9 = 0l) const
     {
+        if (!isValidState) {
+            return { *this, _s, "" };
+        }
 #if defined(OS_LINUX) || defined(OS_MAC)
         static const std::regex pattern(delayStr, std::regex::optimize);
 
@@ -681,23 +759,31 @@ public:
                 result = parser(result, p1, p2, p3, p4, p5, p6, p7, p8, p9);
             }
         }
-        return result;
+        return { *this, _s, result };
 
 #elif defined(OS_WIN)
-        if (!isValidState) {
-            return "";
-        }
-
-        switch (_s) {
-            case tdb::str::clear_screen: return do_clear();
-            default: return "";
-        }
+        // switch (_s) {
+        //     case tdb::str::clear_screen: return { *this, do_clear() };
+        //     default: return { *this, "" };
+        // }
+        return { *this, _s, "" };
 #endif
     }
 };
 
-template<>
-TermDb<Exceptions::OFF>::TermDb(){
+
+// template <Exceptions E, typename CharT, typename Traits>
+// std::basic_ostream<CharT, Traits> &
+// operator<<(std::basic_ostream<CharT, Traits> &os,
+//            const typename TermDb<E>::action &obj)
+// {
+//     os << obj.s;
+//     return os;
+// }
+
+template <>
+TermDb<Exceptions::OFF>::TermDb()
+{
 #if defined(OS_WIN)
     name         = "cmd.exe";
     isValidState = true;
@@ -705,15 +791,16 @@ TermDb<Exceptions::OFF>::TermDb(){
     const auto terminalToBe = std::getenv("TERM");
     if (terminalToBe) {
         const auto error = loadDB(terminalToBe, DPATH);
-        isValidState = error ? false : true;
+        isValidState     = error ? false : true;
     } else {
         isValidState = false;
     }
 #endif
 }
 
-template<>
-TermDb<Exceptions::ON>::TermDb(){
+template <>
+TermDb<Exceptions::ON>::TermDb()
+{
 #if defined(OS_WIN)
     name         = "cmd.exe";
     isValidState = true;
@@ -736,7 +823,7 @@ template <>
 TermDb<Exceptions::OFF>::TermDb(const std::string &_name, std::string _path)
 {
     const auto error = loadDB(_name, _path);
-    isValidState = error ? false : true;
+    isValidState     = error ? false : true;
 }
 
 template <>
@@ -761,10 +848,13 @@ TermDb<Exceptions::ON>::TermDb(const std::string &_name, std::string _path)
 #endif
 }
 
-template<>
-TermDb<Exceptions::OFF>::operator bool() const noexcept { return isValidState; }
+template <>
+TermDb<Exceptions::OFF>::operator bool() const noexcept
+{
+    return isValidState;
+}
 
-template<>
+template <>
 TermDb<Exceptions::ON>::operator bool() const noexcept = delete;
 
 template <Exceptions E>
@@ -1506,37 +1596,38 @@ bool TermDb<E>::parse(const std::string _name, std::string _path)
     return isValidState;
 }
 
-#if defined(OS_WIN)
-template <Exceptions E>
-void TermDb<E>::_emulate_clear() const noexcept
-{
-    CONSOLE_SCREEN_BUFFER_INFO buffInfo;
-    GetConsoleScreenBufferInfo(consoleHandle, &buffInfo);
+// #if defined(OS_WIN)
+// template <Exceptions E>
+// void TermDb<E>::_emulate_clear() const noexcept
+// {
+//     CONSOLE_SCREEN_BUFFER_INFO buffInfo;
+//     GetConsoleScreenBufferInfo(consoleHandle, &buffInfo);
 
-    DWORD totalChars   = buffInfo.dwSize.X * buffInfo.dwSize.Y;
-    COORD startPos     = { 0, 0 };
-    DWORD charsWritten = 0;
+//     DWORD totalChars   = buffInfo.dwSize.X * buffInfo.dwSize.Y;
+//     COORD startPos     = { 0, 0 };
+//     DWORD charsWritten = 0;
 
-    FillConsoleOutputCharacter(consoleHandle, ' ', totalChars, startPos,
-                               &charsWritten);
-    FillConsoleOutputAttribute(consoleHandle, buffInfo.wAttributes, totalChars,
-                               startPos,
-                               &charsWritten);  // Resetting attributes
-    SetConsoleCursorPosition(consoleHandle,
-                             startPos);  // Position cursor to home
-}
+//     FillConsoleOutputCharacter(consoleHandle, ' ', totalChars, startPos,
+//                                &charsWritten);
+//     FillConsoleOutputAttribute(consoleHandle, buffInfo.wAttributes,
+//     totalChars,
+//                                startPos,
+//                                &charsWritten);  // Resetting attributes
+//     SetConsoleCursorPosition(consoleHandle,
+//                              startPos);  // Position cursor to home
+// }
 
-template <Exceptions E>
-std::string TermDb<E>::do_clear() const noexcept
-{
-    if (isLessThanWin10) {
-        _emulate_clear();
-        return "";
-    } else {
-        return "\x1b[2J";
-    }
-}
-#endif
+// template <Exceptions E>
+// std::string TermDb<E>::do_clear() const noexcept
+// {
+//     if (isLessThanWin10) {
+//         _emulate_clear();
+//         return "";
+//     } else {
+//         return "\x1b[2J";
+//     }
+// }
+// #endif
 
 }  // namespace tdb
 
