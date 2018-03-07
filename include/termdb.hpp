@@ -694,13 +694,17 @@ private:
         friend std::basic_ostream<CharT, Traits> &
         operator<<(std::basic_ostream<CharT, Traits> &os, const action &obj)
         {
+            std::stringstream tempStream;
+            auto osBuffer = os.rdbuf();
+            tempStream.basic_ios::rdbuf(osBuffer);
+
 #if defined(OS_LINUX) || defined(OS_MAC)
-            os << obj.get();
+            tempStream << obj.get();
 #elif defined(OS_WIN)
             auto stringToPrint = obj.act();
-            os << stringToPrint;
+            tempStream << stringToPrint;
 #endif
-            os.flush();
+            tempStream.flush();
             return os;
         }
     };
