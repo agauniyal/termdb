@@ -694,7 +694,7 @@ private:
         friend std::basic_ostream<CharT, Traits> &
         operator<<(std::basic_ostream<CharT, Traits> &os, const action &obj)
         {
-            std::stringstream tempStream;
+            std::basic_stringstream<CharT, Traits> tempStream;
             auto osBuffer = os.rdbuf();
             tempStream.basic_ios::rdbuf(osBuffer);
 
