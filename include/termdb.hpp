@@ -674,16 +674,8 @@ private:
 #endif
 
     public:
-        action(const TermDb &_t, str _cap, const char *_c)
-            : term(_t), capname(_cap), actionString(_c)
-        {
-            // switch(capname){
-            //     case tdb::str::clear_screen: actionString = "";
-            // }
-        }
-
-        action(const TermDb &_t, str _cap, std::string _s)
-            : term(_t), capname(_cap), actionString(_s)
+        action(const TermDb &_t, std::string _s, str _cap)
+            : term(_t), actionString(_s), capname(_cap)
         {
         }
 
@@ -694,17 +686,12 @@ private:
         friend std::basic_ostream<CharT, Traits> &
         operator<<(std::basic_ostream<CharT, Traits> &os, const action &obj)
         {
-            std::basic_stringstream<CharT, Traits> tempStream;
-            auto osBuffer = os.rdbuf();
-            tempStream.basic_ios::rdbuf(osBuffer);
-
+            std::basic_ostream<CharT, Traits> tempStream(os.rdbuf());
 #if defined(OS_LINUX) || defined(OS_MAC)
             tempStream << obj.get();
 #elif defined(OS_WIN)
-            auto stringToPrint = obj.act();
-            tempStream << stringToPrint;
+            tempStream << obj.act();
 #endif
-            tempStream.flush();
             return os;
         }
     };
@@ -745,7 +732,7 @@ public:
                param p8 = 0l, param p9 = 0l) const
     {
         if (!isValidState) {
-            return { *this, _s, "" };
+            return { *this, "", _s };
         }
 #if defined(OS_LINUX) || defined(OS_MAC)
         static const std::regex pattern(delayStr, std::regex::optimize);
@@ -763,7 +750,7 @@ public:
                 result = parser(result, p1, p2, p3, p4, p5, p6, p7, p8, p9);
             }
         }
-        return { *this, _s, result };
+        return action(*this, "", _s);
 
 #elif defined(OS_WIN)
         // switch (_s) {
@@ -771,7 +758,7 @@ public:
         //     default: return { *this, "" };
         // }
         // TODO: should insert string in case of win10
-        return { *this, _s, "" };
+        return action(*this, "", _s);
 #endif
     }
 };
@@ -881,11 +868,10 @@ std::error_code TermDb<E>::loadDB(const std::string _name, std::string _path)
 
 
     std::string tryPath = _path;
-    char separator;
 #if defined(OS_LINUX) || defined(OS_MAC)
-    separator = '/';
+    char separator = '/';
 #elif defined(OS_WIN)
-    separator = '\\';
+    char separator = '\\';
 #endif
 
     tryPath.append(_name, 0, 1).append(1, separator).append(_name);
