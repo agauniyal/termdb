@@ -1,9 +1,18 @@
 #ifndef RANG_TERMDB_HPP
 #define RANG_TERMDB_HPP
 
+#if defined(__unix__) || defined(__unix) || defined(__linux__)
+#define OS_LINUX
+#elif defined(WIN32) || defined(_WIN32) || defined(_WIN64)
+#define OS_WIN
+#elif defined(__APPLE__) || defined(__MACH__)
+#define OS_MAC
+#else
+#error Unknown Platform
+#endif
+
 #include "optional.hpp"
 #include "variant.hpp"
-
 #include <algorithm>
 #include <bitset>
 #include <fstream>
@@ -18,6 +27,10 @@
 #include <regex>
 #include <system_error>
 
+#if defined(OS_WIN)
+#include <windows.h>
+#include <VersionHelpers.h>
+#endif
 
 namespace tdb {
 enum class ParseError { Success, ReadError, BadDatabase, MagicByteError };
@@ -37,15 +50,21 @@ struct is_error_code_enum<tdb::ParseError> : std::true_type {
 
 namespace tdb {
 
+#if defined(OS_LINUX) || defined(OS_MAC)
 constexpr const auto DPATH = "/usr/share/terminfo/";
+#elif defined(OS_WIN)
+constexpr const auto DPATH = "";
+#endif
 
 // sizes from '/usr/include/term.h'
 constexpr const auto numCapBool = 44;
 constexpr const auto numCapNum  = 39;
 constexpr const auto numCapStr  = 414;
 
+
 // param types
 using param = mpark::variant<long, std::string>;
+
 
 // error_code
 namespace detail {
@@ -581,14 +600,17 @@ enum class str {
     box_chars_1
 };
 
+enum class Exceptions : bool { ON = true, OFF = false };
 
+template <Exceptions E = Exceptions::ON>
 class TermDb {
 private:
     std::bitset<numCapBool> booleans{};
     std::array<uint16_t, numCapNum> numbers{};
-    std::string name;
     std::vector<uint16_t> stringOffset;
     std::vector<char> stringTable;
+
+    std::string name;
     bool isValidState = false;
 
     // https://regex101.com/r/GwGLfk/1
@@ -596,35 +618,94 @@ private:
 
     std::error_code loadDB(const std::string, std::string);
     void escape(std::string &) const;
-    std::string parser(const std::string &, param, param, param, param, param,
-                       param, param, param, param) const;
+    std::string parser(const std::string &s, param p1, param p2, param p3,
+                       param p4, param p5, param p6, param p7, param p8,
+                       param p9) const;
+    bool parse(const std::string, std::string = DPATH);
+
+#if defined(OS_WIN)
+    bool isLessThanWin10 = false;
+    HANDLE consoleHandle = nullptr;
+#endif
+
+    class action {
+        const TermDb &term;
+        std::string actionString;
+        str capname;
+
+#if defined(OS_WIN)
+        void _emulate_clear(HANDLE consoleHandle) const noexcept
+        {
+            CONSOLE_SCREEN_BUFFER_INFO buffInfo;
+            GetConsoleScreenBufferInfo(consoleHandle, &buffInfo);
+
+            DWORD totalChars   = buffInfo.dwSize.X * buffInfo.dwSize.Y;
+            COORD startPos     = { 0, 0 };
+            DWORD charsWritten = 0;
+
+            FillConsoleOutputCharacter(consoleHandle, ' ', totalChars, startPos,
+                                       &charsWritten);
+            FillConsoleOutputAttribute(consoleHandle, buffInfo.wAttributes,
+                                       totalChars, startPos,
+                                       &charsWritten);  // Resetting attributes
+            SetConsoleCursorPosition(consoleHandle,
+                                     startPos);  // Position cursor to home
+        }
+
+        std::string do_clear(HANDLE consoleHandle) const noexcept
+        {
+            if (term.isLessThanWin10) {
+                _emulate_clear(consoleHandle);
+                return "";
+            } else {
+                return "\x1b[2J";
+            }
+        }
+
+        std::string act() const noexcept
+        {
+            auto consoleHandle = term.consoleHandle;
+            switch (capname) {
+                case tdb::str::clear_screen: return do_clear(consoleHandle);
+                default:
+                    return "";  // TODO: What to return in this case ?
+            }
+        }
+#endif
+
+    public:
+        action(const TermDb &_t, std::string _s, str _cap)
+            : term(_t), actionString(_s), capname(_cap)
+        {
+        }
+
+        std::string get() const noexcept { return actionString; }
+        str name() const noexcept { return capname; }
+
+        template <typename CharT, typename Traits>
+        friend std::basic_ostream<CharT, Traits> &
+        operator<<(std::basic_ostream<CharT, Traits> &os, const action &obj)
+        {
+            std::basic_ostream<CharT, Traits> tempStream(os.rdbuf());
+#if defined(OS_LINUX) || defined(OS_MAC)
+            tempStream << obj.get();
+#elif defined(OS_WIN)
+            tempStream << obj.act();
+#endif
+            return os;
+        }
+    };
+
+    friend class action;
 
 public:
-    TermDb() = default;
-    TermDb(const std::string &_name, std::string _path = DPATH)
-    {
-        const auto error = loadDB(_name, _path);
-        if (error) {
-            throw error;
-        } else {
-            isValidState = true;
-        }
-    }
+    TermDb();
 
-    explicit operator bool() const noexcept { return isValidState; }
+    TermDb(const std::string &_name, std::string _path = DPATH);
+
+    explicit operator bool() const noexcept;
     std::string getName() const { return name; }
 
-    bool parse(const std::string _name, std::string _path = DPATH)
-    {
-        name.clear();
-        booleans.reset();
-        numbers.fill(std::numeric_limits<uint16_t>::max());
-        stringOffset.clear();
-        stringTable.clear();
-        const auto error = loadDB(_name, _path);
-        isValidState     = error ? false : true;
-        return isValidState;
-    }
 
     bool get(tdb::bin _b) const noexcept
     {
@@ -638,17 +719,22 @@ public:
         // -1 value in terminfo databases.
         const auto n      = static_cast<int>(_n);
         const auto result = numbers[n];
-        if (result == std::numeric_limits<uint16_t>::max()) {
+        if (result == (std::numeric_limits<uint16_t>::max)()) {
             return {};
         } else {
             return result;
         }
     }
 
-    std::string get(tdb::str _s, param p1 = 0l, param p2 = 0l, param p3 = 0l,
-                    param p4 = 0l, param p5 = 0l, param p6 = 0l, param p7 = 0l,
-                    param p8 = 0l, param p9 = 0l) const
+
+    action get(tdb::str _s, param p1 = 0l, param p2 = 0l, param p3 = 0l,
+               param p4 = 0l, param p5 = 0l, param p6 = 0l, param p7 = 0l,
+               param p8 = 0l, param p9 = 0l) const
     {
+        if (!isValidState) {
+            return { *this, "", _s };
+        }
+#if defined(OS_LINUX) || defined(OS_MAC)
         static const std::regex pattern(delayStr, std::regex::optimize);
 
         const size_t s = static_cast<int>(_s);
@@ -656,7 +742,7 @@ public:
 
         if (!stringOffset.empty() && s < stringOffset.size()) {
             const auto offset      = stringOffset[s];
-            constexpr auto INVALID = std::numeric_limits<uint16_t>::max();
+            constexpr auto INVALID = (std::numeric_limits<uint16_t>::max)();
             if (offset != INVALID && offset < stringTable.size()) {
                 result.append(&stringTable[offset]);
                 escape(result);
@@ -664,14 +750,108 @@ public:
                 result = parser(result, p1, p2, p3, p4, p5, p6, p7, p8, p9);
             }
         }
-        return result;
+        return action(*this, "", _s);
+
+#elif defined(OS_WIN)
+        // switch (_s) {
+        //     case tdb::str::clear_screen: return { *this, do_clear() };
+        //     default: return { *this, "" };
+        // }
+        // TODO: should insert string in case of win10
+        return action(*this, "", _s);
+#endif
     }
 };
 
 
-std::error_code TermDb::loadDB(const std::string _name, std::string _path)
-{
+// template <Exceptions E, typename CharT, typename Traits>
+// std::basic_ostream<CharT, Traits> &
+// operator<<(std::basic_ostream<CharT, Traits> &os,
+//            const typename TermDb<E>::action &obj)
+// {
+//     os << obj.s;
+//     return os;
+// }
 
+template <>
+TermDb<Exceptions::OFF>::TermDb()
+{
+#if defined(OS_WIN)
+    name         = "cmd.exe";
+    isValidState = true;
+#elif defined(OS_LINUX) || defined(OS_MAC)
+    const auto terminalToBe = std::getenv("TERM");
+    if (terminalToBe) {
+        const auto error = loadDB(terminalToBe, DPATH);
+        isValidState     = error ? false : true;
+    } else {
+        isValidState = false;
+    }
+#endif
+}
+
+template <>
+TermDb<Exceptions::ON>::TermDb()
+{
+#if defined(OS_WIN)
+    name         = "cmd.exe";
+    isValidState = true;
+#elif defined(OS_LINUX) || defined(OS_MAC)
+    const auto terminalToBe = std::getenv("TERM");
+    if (terminalToBe) {
+        const auto error = loadDB(terminalToBe, DPATH);
+        if (error) {
+            throw error;
+        } else {
+            isValidState = true;
+        }
+    } else {
+        throw;
+    }
+#endif
+}
+
+template <>
+TermDb<Exceptions::OFF>::TermDb(const std::string &_name, std::string _path)
+{
+    const auto error = loadDB(_name, _path);
+    isValidState     = error ? false : true;
+}
+
+template <>
+TermDb<Exceptions::ON>::TermDb(const std::string &_name, std::string _path)
+{
+#if defined(OS_WIN)
+    if (_path.empty()) {
+        name         = "cmd.exe";
+        isValidState = true;
+    } else {
+#endif
+
+        const auto error = loadDB(_name, _path);
+        if (error) {
+            throw error;
+        } else {
+            isValidState = true;
+        }
+
+#if defined(OS_WIN)
+    }
+#endif
+}
+
+template <>
+TermDb<Exceptions::OFF>::operator bool() const noexcept
+{
+    return isValidState;
+}
+
+template <>
+TermDb<Exceptions::ON>::operator bool() const noexcept = delete;
+
+template <Exceptions E>
+std::error_code TermDb<E>::loadDB(const std::string _name, std::string _path)
+{
     const auto hashCharacter = [](unsigned char c) {
         if (c < 10) {
             return c + '0';
@@ -688,7 +868,14 @@ std::error_code TermDb::loadDB(const std::string _name, std::string _path)
 
 
     std::string tryPath = _path;
-    tryPath.append(_name, 0, 1).append(1, '/').append(_name);
+#if defined(OS_LINUX) || defined(OS_MAC)
+    char separator = '/';
+#elif defined(OS_WIN)
+    char separator = '\\';
+#endif
+
+    tryPath.append(_name, 0, 1).append(1, separator).append(_name);
+
     std::ifstream db(tryPath.c_str(), std::ios::binary | std::ios::ate);
     if (!db) {
         // try using hash value
@@ -697,7 +884,7 @@ std::error_code TermDb::loadDB(const std::string _name, std::string _path)
 
         hash[0] = hashCharacter((firstchar & 0xF0) >> 4);
         hash[1] = hashCharacter(firstchar & 0x0F);
-        _path.append(&hash[0], 2).append(1, '/').append(_name);
+        _path.append(&hash[0], 2).append(1, separator).append(_name);
 
         db.clear();
         db.open(_path, std::ios::binary | std::ios::ate);
@@ -738,11 +925,11 @@ std::error_code TermDb::loadDB(const std::string _name, std::string _path)
 
 
     /* size list contains size/numbers of -
-      - name [0]
-      - booleans [1]
-      - numbers [2]
-      - offsets [3]
-      - stringTable [4]
+    - name [0]
+    - booleans [1]
+    - numbers [2]
+    - offsets [3]
+    - stringTable [4]
     */
     uint16_t sList[5] = { 0 };
     for (auto i = 2, j = 0; i < 12; i += 2, ++j) {
@@ -772,13 +959,13 @@ std::error_code TermDb::loadDB(const std::string _name, std::string _path)
 
 
     /*
-        Between the boolean section and the number section, a null
-        byte will be inserted, if necessary, to ensure that the
-        number section begins on an even byte (this is a relic of
-        the PDP-11's word-addressed architecture, originally
-        designed in to avoid IOT traps induced by addressing a
-        word on an odd byte boundary). All short integers are
-        aligned on a short word boundary.
+    Between the boolean section and the number section, a null
+    byte will be inserted, if necessary, to ensure that the
+    number section begins on an even byte (this is a relic of
+    the PDP-11's word-addressed architecture, originally
+    designed in to avoid IOT traps induced by addressing a
+    word on an odd byte boundary). All short integers are
+    aligned on a short word boundary.
     */
     cursor += cursor % 2;
 
@@ -805,7 +992,8 @@ std::error_code TermDb::loadDB(const std::string _name, std::string _path)
     return ec;
 }
 
-void TermDb::escape(std::string &input) const
+template <Exceptions E>
+void TermDb<E>::escape(std::string &input) const
 {
     const auto isDigit = [](const char c) { return (c >= '0' && c <= '9'); };
 
@@ -865,10 +1053,10 @@ void TermDb::escape(std::string &input) const
     std::swap(result, input);
 }
 
-
-std::string TermDb::parser(const std::string &s, param p1, param p2, param p3,
-                           param p4, param p5, param p6, param p7, param p8,
-                           param p9) const
+template <Exceptions E>
+std::string TermDb<E>::parser(const std::string &s, param p1, param p2,
+                              param p3, param p4, param p5, param p6, param p7,
+                              param p8, param p9) const
 {
     const auto isDigit    = [](const char c) { return (c >= '0' && c <= '9'); };
     const auto isFlagChar = [](const char c) {
@@ -893,7 +1081,7 @@ std::string TermDb::parser(const std::string &s, param p1, param p2, param p3,
                     auto num = mpark::get<long>(element);
                     stk.pop();
                     return num;
-                } catch (mpark::bad_variant_access &e) {
+                } catch (mpark::bad_variant_access &err) {
                     return {};
                 }
             } else {
@@ -909,7 +1097,7 @@ std::string TermDb::parser(const std::string &s, param p1, param p2, param p3,
                     auto num = mpark::get<std::string>(element);
                     stk.pop();
                     return num;
-                } catch (mpark::bad_variant_access &e) {
+                } catch (mpark::bad_variant_access &err) {
                     return {};
                 }
             } else {
@@ -1225,7 +1413,7 @@ std::string TermDb::parser(const std::string &s, param p1, param p2, param p3,
                     auto &param2 = mpark::get<long>(p2);
                     ++param1;
                     ++param2;
-                } catch (mpark::bad_variant_access &e) {
+                } catch (mpark::bad_variant_access &err) {
                     incorrectString = true;
                 }
                 break;
@@ -1380,6 +1568,23 @@ std::string TermDb::parser(const std::string &s, param p1, param p2, param p3,
         activeParse = false;
     }
     return incorrectString ? "" : result;
+}
+
+
+template <Exceptions E>
+bool TermDb<E>::parse(const std::string _name, std::string _path)
+{
+
+    name.clear();
+    booleans.reset();
+    numbers.fill((std::numeric_limits<uint16_t>::max)());
+    stringOffset.clear();
+    stringTable.clear();
+
+    const auto error = loadDB(_name, _path);
+    isValidState     = error ? false : true;
+
+    return isValidState;
 }
 
 }  // namespace tdb

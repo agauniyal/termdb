@@ -2,12 +2,22 @@
 #include <iostream>
 #include <sstream>
 
+#if defined(__unix__) || defined(__unix) || defined(__linux__)                 \
+  || defined(__APPLE__) || defined(__MACH__)
+constexpr auto STPATH     = "stressTestTerms.txt";
+constexpr auto MIRRORPATH = "mirror/";
+#elif defined(WIN32) || defined(_WIN32) || defined(_WIN64)
+constexpr auto STPATH     = "..\\stressTestTerms.txt";
+constexpr auto MIRRORPATH = "..\\mirror\\";
+#endif
+
 int main()
 {
     using namespace tdb;
     using namespace std;
 
-    ifstream names("stressTestTerms.txt");
+    ifstream names(STPATH);
+
     if (!names) {
         return -1;
     }
@@ -21,11 +31,12 @@ int main()
         nameList.emplace_back(name);
     }
 
-    TermDb parser;
     ostringstream buffer;
     for (auto &term : nameList) {
-        parser.parse(term, "mirror/");
+        TermDb<Exceptions::OFF> parser(term, MIRRORPATH);
+
         string termName(parser.getName());
+        buffer << termName << '\n';
 
         for (auto i = 0; i < tdb::numCapBool; ++i) {
             const auto b = parser.get(static_cast<bin>(i));
@@ -40,17 +51,16 @@ int main()
         buffer << "\n";
 
         for (auto i = 0; i < tdb::numCapStr; ++i) {
-            const auto s = parser.get(static_cast<str>(i), 1, 1, 1, 1,
-                                               1, 1, 1, 1, 1);
+            const auto s
+              = parser.get(static_cast<str>(i), 1, 1, 1, 1, 1, 1, 1, 1, 1);
             buffer << s << " ";
         }
         buffer << "\n\n";
     }
 
     ofstream output("output.txt");
-    if (output) {
-        output << buffer.str();
-    } else {
+    if (!output) {
         return -1;
     }
+    output << buffer.str();
 }

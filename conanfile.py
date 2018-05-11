@@ -8,7 +8,7 @@ class TermDbConan(ConanFile):
     url = "https://github.com/agauniyal/termdb"
     description = "Terminfo parser for modern c++"
     generators = "pkg_config"
-    requires = "optional-lite/2.3.0@nonstd-lite/stable", "variant/1.2.2@rang/stable"
+    requires = "optional-lite/2.3.0@nonstd-lite/stable", "variant/1.3.0@rang/stable"
     build_requires = "doctest/1.2.6@bincrafters/stable"
 
     def build(self):

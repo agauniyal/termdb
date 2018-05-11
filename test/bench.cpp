@@ -3,6 +3,15 @@
 #include <sstream>
 #include <chrono>
 
+#if defined(__unix__) || defined(__unix) || defined(__linux__)                 \
+  || defined(__APPLE__) || defined(__MACH__)
+constexpr auto STPATH     = "stressTestTerms.txt";
+constexpr auto MIRRORPATH = "mirror/";
+#elif defined(WIN32) || defined(_WIN32) || defined(_WIN64)
+constexpr auto STPATH     = "..\\stressTestTerms.txt";
+constexpr auto MIRRORPATH = "..\\mirror\\";
+#endif
+
 using namespace tdb;
 using namespace std;
 
@@ -20,7 +29,7 @@ struct measure {
 };
 
 
-void runParser(const vector<TermDb> &parsers)
+void runParser(const vector<TermDb<Exceptions::ON>> &parsers)
 {
     ostringstream buffer;
     for (auto &parser : parsers) {
@@ -34,8 +43,8 @@ void runParser(const vector<TermDb> &parsers)
             buffer << n.value_or(0);
         }
         for (auto i = 0; i < tdb::numCapStr; ++i) {
-            const auto s = parser.get(static_cast<str>(i), 1, 1, 1, 1,
-                                               1, 1, 1, 1, 1);
+            const auto s
+              = parser.get(static_cast<str>(i), 1, 1, 1, 1, 1, 1, 1, 1, 1);
             buffer << s;
         }
     }
@@ -43,7 +52,8 @@ void runParser(const vector<TermDb> &parsers)
 
 int main()
 {
-    ifstream names("stressTestTerms.txt");
+    ifstream names(STPATH);
+
     if (!names) {
         return -1;
     }
@@ -56,11 +66,11 @@ int main()
         nameList.emplace_back(name);
     }
 
-    vector<TermDb> parsers;
+    vector<TermDb<Exceptions::ON>> parsers;
     parsers.reserve(nameList.size());
     for (auto &term : nameList) {
         try {
-            parsers.emplace_back(term, "mirror/");
+            parsers.emplace_back(term, MIRRORPATH);
         } catch (error_code &e) {
             cerr << '\n' << e << ": " << e.message();
         }

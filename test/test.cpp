@@ -3,43 +3,45 @@
 
 #include "termdb.hpp"
 
+#if defined(__unix__) || defined(__unix) || defined(__linux__)
+std::string testPath = "terminfo/";
+#elif defined(WIN32) || defined(_WIN32) || defined(_WIN64)
+std::string testPath = "..\\terminfo\\";
+#elif defined(__APPLE__) || defined(__MACH__)
+std::string testPath = "terminfo/";
+#else
+#error Unknown Platform
+#endif
+
 using namespace tdb;
 
 TEST_CASE("Successful construction")
 {
-    TermDb parser("xterm", "terminfo/");
-
-    REQUIRE(parser);
+    TermDb<Exceptions::ON> parser("xterm", testPath);
     REQUIRE(parser.getName().size() != 0);
+
+    TermDb<Exceptions::OFF> parser2("xterm", testPath);
+    REQUIRE(parser2.getName().size() != 0);
 }
 
 
 TEST_CASE("Failure to construct")
 {
     try {
-        TermDb parser("NON_EXISTENT_TERM_FOR_DEMO");
+        TermDb<Exceptions::ON> parser("NON_EXISTENT_TERM_FOR_DEMO");
     } catch (std::error_code &e) {
         REQUIRE(e == ParseError::ReadError);
     }
-}
 
-
-TEST_CASE("Successfull parsing")
-{
-    TermDb parser;
-    const auto result = parser.parse("xterm", "terminfo/");
-
-    REQUIRE(result);
-    REQUIRE(parser);
+    TermDb<Exceptions::OFF> parser2("NON_EXISTENT_TERM_FOR_DEMO");
+    REQUIRE_FALSE(parser2);
+    REQUIRE(parser2.getName().size() == 0);
 }
 
 
 TEST_CASE("Failure before parsing")
 {
-    TermDb parser;
-    const auto result = parser.parse("NON_EXISTENT_TERM_FOR_DEMO");
-
-    REQUIRE_FALSE(result);
+    TermDb<Exceptions::OFF> parser("NON_EXISTENT_TERM_FOR_DEMO");
     REQUIRE_FALSE(parser);
     REQUIRE(parser.getName().size() == 0);
 }
@@ -47,62 +49,68 @@ TEST_CASE("Failure before parsing")
 
 TEST_CASE("No Magic Bytes")
 {
-    TermDb parser;
-    const auto result = parser.parse("corrupt-magic", "terminfo/");
-
-    REQUIRE_FALSE(result);
+    TermDb<Exceptions::OFF> parser("corrupt-magic", testPath);
     REQUIRE_FALSE(parser);
+    REQUIRE(parser.getName().size() == 0);
+
+    try {
+        TermDb<Exceptions::ON> parser2("corrupt-magic", testPath);
+    } catch (std::error_code &e) {
+        REQUIRE(e == ParseError::MagicByteError);
+    }
 }
 
 
 TEST_CASE("Size0 Error")
 {
-    TermDb parser;
-    const auto result = parser.parse("corrupt-size", "terminfo/");
-
-    REQUIRE_FALSE(result);
+    TermDb<Exceptions::OFF> parser("corrupt-size", testPath);
     REQUIRE_FALSE(parser);
+
+    try {
+        TermDb<Exceptions::ON> parser2("corrupt-size", testPath);
+    } catch (std::error_code &e) {
+        REQUIRE(e == ParseError::BadDatabase);
+    }
 }
 
 
 TEST_CASE("Corrupted Database")
 {
-    TermDb parser;
-    const auto result = parser.parse("corrupted", "terminfo/");
+    TermDb<Exceptions::OFF> parser("corrupted", testPath);
 
-    REQUIRE_FALSE(result);
     REQUIRE_FALSE(parser);
 }
 
 
-TEST_CASE("DataResets successfully")
-{
-    TermDb parser;
-    auto result = parser.parse("xterm", "terminfo/");
-    REQUIRE(result);
+// TEST_CASE("DataResets successfully")
+// {
+//     TermDb<Exceptions::OFF> parser;
+//     auto result = parser.parse("xterm", testPath);
+//     REQUIRE(result);
 
-    auto name = parser.getName();
-    result    = parser.parse("adm3a", "terminfo/");
-    REQUIRE(result);
+//     auto name = parser.getName();
+//     result    = parser.parse("adm3a", testPath);
+//     REQUIRE(result);
 
-    REQUIRE_FALSE(parser.getName() == name);
-}
+//     REQUIRE_FALSE(parser.getName() == name);
+// }
 
 
 TEST_CASE("Wrong Arguments")
 {
-    TermDb parser;
-    auto result = parser.parse("");
-    REQUIRE_FALSE(result);
+    TermDb<Exceptions::OFF> parser("");
+    REQUIRE_FALSE(parser);
+    REQUIRE(parser.getName().size() == 0);
 
-    result = parser.parse("xterm", "");
-    REQUIRE_FALSE(result);
+    TermDb<Exceptions::OFF> parser2("xterm", "");
+    REQUIRE_FALSE(parser2);
+    REQUIRE(parser2.getName().size() == 0);
 }
 
 
 TEST_CASE("Name")
 {
-    TermDb parser("adm3a", "terminfo/");
+    TermDb<Exceptions::ON> parser("adm3a", testPath);
     auto name = parser.getName();
 
     REQUIRE(name == "adm3a|lsi adm3a");
@@ -111,34 +119,40 @@ TEST_CASE("Name")
 
 TEST_CASE("Booleans")
 {
-    TermDb parser("adm3a", "terminfo/");
-    std::bitset<44> arr;
+    TermDb<Exceptions::ON> parser("adm3a", testPath);
+    TermDb<Exceptions::OFF> parser2("adm3a", testPath);
+    std::bitset<44> arr1, arr2;
 
     for (auto i = 0; i < 44; ++i) {
         auto currCap = static_cast<bin>(i);
-        arr[i]       = parser.get(currCap);
+        arr1[i]      = parser.get(currCap);
+        arr2[i]      = parser2.get(currCap);
     }
 
     auto revString = "00000010000000000000000000000000000000000010";
-    REQUIRE(arr.to_string() == revString);
+    REQUIRE(arr1.to_string() == revString);
+    REQUIRE(arr2.to_string() == revString);
 }
 
 
 TEST_CASE("Numbers")
 {
-    TermDb parser("adm3a", "terminfo/");
+    TermDb<Exceptions::ON> parser1("adm3a", testPath);
+    TermDb<Exceptions::OFF> parser2("adm3a", testPath);
 
-    std::vector<uint16_t> hardNums(39, 65535);
+    std::vector<uint16_t> hardNums1(39, 65535), hardNums2(39, 65535);
     // hardocoded for adm3a
-    hardNums[0] = 80;
-    hardNums[2] = 24;
+    hardNums1[0] = hardNums2[0] = 80;
+    hardNums1[2] = hardNums2[2] = 24;
 
-    std::vector<uint16_t> parsedNums(39, 65535);
+    std::vector<uint16_t> parsedNums1(39, 65535), parsedNums2(39, 65535);
 
     for (auto i = 0; i < 39; ++i) {
-        auto currCap  = static_cast<num>(i);
-        parsedNums[i] = parser.get(currCap).value_or(0);
+        auto currCap   = static_cast<num>(i);
+        parsedNums1[i] = parser1.get(currCap).value_or(0);
+        parsedNums2[i] = parser2.get(currCap).value_or(0);
     }
 
-    REQUIRE(parsedNums.size() == hardNums.size());
+    REQUIRE(parsedNums1.size() == hardNums1.size());
+    REQUIRE(parsedNums2.size() == hardNums2.size());
 }

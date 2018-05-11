@@ -17,64 +17,91 @@ using namespace tdb;
 int main()
 {
 
-	/* Create a parser object which, obviously,
-	   does nothing right now */
-	TermDb parser;
-
-	// now you can ask it to parse some terminfo databases
-	bool result = parser.parse("gnome");
+	/* Create a parser object, with exceptions enabled, which parses some terminfo databases */
+	TermDb<Exceptions::ON> parser("gnome");
 
 	// or specify location of database files
 	// default is '/usr/share/terminfo/'
-	parser.parse("adm3a","/usr/local/share/");
+	TermDb<Exceptions::ON> parser2("adm3a","/usr/local/share/");
+
+	// you get the Exceptions::ON behavior by default
+	// TermDb parser3("gnome");  // [C++17]
+
+	// don't need exceptions ? we got you ;)
+	TermDb<Exceptions::OFF> parser4("gnome");
+	TermDb<Exceptions::OFF> parser5("adm3a","/usr/local/share/");
 
 	// right => /usr/share/terminfo/
 	// wrong !==! /usr/share/terminfo
-
-	// you can call parse() method as many times on
-	// same object, it will overwrite previous db
-	parser.parse("gnome");
-	parser.parse("xterm");
 }
 ```
 
 #### 2.
 ```cpp
+#include <iostream>
+#include "termdb.hpp"
+
+using namespace std;
+using namespace tdb;
+
+int main()
 {
+	// What about capablities are not present?
 
-	// There is one other way to construct parser objects
-	// which follows same signature as parse() method
-	TermDb parser1("gnome");
-	TermDb parser2("xterm", "/usr/local/terminfo/");
+	try{
+		TermDb<Exceptions::ON> parser("adm3a");
 
-	/* The difference b/w constructor and parse() method
-	   is that parse() method returns a boolean result
-	   indicating success of operation while constructor throws exception
-	*/
+		// Well boolean capablities can return false so
+		// b will be false if capablity is missing
+		auto b = parser.get(bin::has_meta_key);
 
-	// this throws exception
-	TermDb parser3("aaaa");
+		// Similarly string capablities can return empty strings
+		// in case said capablity is not found for given terminal
+		auto s = parser.get(str::enter_bold_mode);
+
+		// An optional type is returned for numeric capablities
+		auto n1 = parser.get(num::columns);
+		if(n1){
+			cout << n1.value();
+		} else {
+			cerr << "Oops!";
+		}
+
+		// Can use handy .value_or() as well
+		auto n2 = parser.get(num::columns);
+		cout << n2.value_or(24);
+	} catch(...) {
+		cout << "Oops !! Error Occured..\n";
+	}
+
+	return 0;
 }
 ```
 
 #### 3.
 ```cpp
+#include <iostream>
+#include "termdb.hpp"
+
+using namespace std;
+using namespace tdb;
+
+int main()
 {
 	// What about capablities are not present?
 
-	TermDb parser;
-	bool result = parser.parse("adm3a");
+	TermDb<Exceptions::ON> terminal("gnome-terminal");
 
 	// Well boolean capablities can return false so
 	// b will be false if capablity is missing
-	auto b = parser.get(bin::has_meta_key);
+	auto b = terminal.get(bin::has_meta_key);
 
 	// Similarly string capablities can return empty strings
 	// in case said capablity is not found for given terminal
-	auto s = parser.get(str::enter_bold_mode);
+	auto s = terminal.get(str::enter_bold_mode);
 
 	// An optional type is returned for numeric capablities
-	auto n1 = parser.get(num::columns);
+	auto n1 = terminal.get(num::columns);
 	if(n1){
 		cout << n1.value();
 	} else {
@@ -82,7 +109,140 @@ int main()
 	}
 
 	// Can use handy .value_or() as well
-	auto n2 = parser.get(num::columns);
+	auto n2 = terminal.get(num::columns);
 	cout << n2.value_or(24);
+}
+```
+
+#### 4.
+```cpp
+#include <iostream>
+#include "termdb.hpp"
+
+using namespace std;
+using namespace tdb;
+
+int main()
+{
+	try{
+		TermDb<Exceptions::ON> terminal("gnome-terminal");
+		// TermDb terminal("gnome-terminal"); // Exceptions ON by default [C++17]
+
+		auto name = terminal.getName();
+		cout << "Terminal name: " << name << '\n';
+
+		auto canRedefineColors = terminal.get(bin::can_change);
+		cout << "Can you redefine colors on " << name << " ? " << canRedefineColors << '\n';
+
+		auto maxColors = terminal.get(num::max_colors).value_or(0);
+		cout << "Max colors for " << name << " : " << maxColors << '\n';
+
+		auto clearScreenCode = terminal.get(str::clear_screen);
+		cout << "Clear screen on " << name << " using code: " << clearScreenCode << '\n';
+
+	} catch (...) {
+		cout << "Oops!!\n";
+	}
+
+
+	return 0;
+}
+```
+
+#### 5.
+```cpp
+#include <iostream>
+#include "termdb.hpp"
+
+using namespace std;
+using namespace tdb;
+
+int main(){
+
+	TermDb<Exceptions::OFF> terminal("gnome-terminal");
+
+	if (terminal){
+		auto name = terminal.getName();
+		cout << "Terminal name: " << name << '\n';
+
+		auto canRedefineColors = terminal.get(bin::can_change);
+		cout << "Can you redefine colors on " << name << " ? " << canRedefineColors << '\n';
+
+		auto maxColors = terminal.get(num::max_colors).value_or(0);
+		cout << "Max colors for " << name << " : " << maxColors << '\n';
+
+		auto clearScreenCode = terminal.get(str::clear_screen);
+		cout << "Clear screen on " << name << " using code: " << clearScreenCode << '\n';
+	} else {
+		cout << "Oops!!\n";
+	}
+
+	return 0;
+}
+```
+
+#### 6.
+```cpp
+#include <iostream>
+#include "termdb.hpp"
+
+using namespace std;
+using namespace tdb;
+
+int main(){
+
+	try{
+		// auto-detect using $TERM on linux and use cmd on Windows
+		TermDb<Exceptions::ON> terminal; 
+
+		auto name = terminal.getName();
+		cout << "Terminal name: " << name << '\n';
+
+		auto canRedefineColors = terminal.get(bin::can_change);
+		cout << "Can you redefine colors on " << name << " ? " << canRedefineColors << '\n';
+
+		auto maxColors = terminal.get(num::max_colors).value_or(0);
+		cout << "Max colors for " << name << " : " << maxColors << '\n';
+
+		auto clearScreenCode = terminal.get(str::clear_screen);
+		cout << "Clear screen on " << name << " using code: " << clearScreenCode << '\n';
+	} catch (...) {
+		cout << "Oops!!\n";
+	}
+
+	return 0;
+}
+```
+
+#### 7.
+```cpp
+#include <iostream>
+#include "termdb.hpp"
+
+using namespace std;
+using namespace tdb;
+
+int main(){
+
+	// auto-detect using $TERM on linux and use cmd on Windows
+	TermDb<Exceptions::OFF> terminal; 
+
+	if (terminal) {
+		auto name = terminal.getName();
+		cout << "Terminal name: " << name << '\n';
+
+		auto canRedefineColors = terminal.get(bin::can_change);
+		cout << "Can you redefine colors on " << name << " ? " << canRedefineColors << '\n';
+
+		auto maxColors = terminal.get(num::max_colors).value_or(0);
+		cout << "Max colors for " << name << " : " << maxColors << '\n';
+
+		auto clearScreenCode = terminal.get(str::clear_screen);
+		cout << "Clear screen on " << name << " using code: " << clearScreenCode << '\n';
+	} else {
+		cout << "Oops!!\n";
+	}
+
+	return 0;
 }
 ```
