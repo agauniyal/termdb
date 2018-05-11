@@ -9,6 +9,12 @@ variant = dependency('variant')
 
 subdir('test')
 
+if host_machine.system() == 'linux'
+  extract_data = find_program('scripts/extract_data.sh')
+elif host_machine.system() == 'windows'
+  extract_data = find_program('scripts/extract_data.bat')
+endif
+
 extract_data = find_program('scripts/extract_data.sh')
 run_target('extract_data', command : extract_data.path())
 
